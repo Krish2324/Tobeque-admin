@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import RichTextEditor from '../components/RichTextEditor';
 
+const isVideo = (url) => url && typeof url === 'string' && url.match(/\.(mp4|webm|ogg|mov)$/i);
+
 const ProductForm = () => {
   const { id } = useParams();
   const isEdit = !!id;
@@ -1032,11 +1034,19 @@ const ProductForm = () => {
               <div className="flex items-center gap-4 mt-2">
                 {thumbnailPreview ? (
                   <div className="relative">
-                    <img
-                      src={thumbnailPreview}
-                      alt="Thumbnail Preview"
-                      className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
-                    />
+                    {isVideo(thumbnailPreview) ? (
+                      <video
+                        src={thumbnailPreview}
+                        className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+                        autoPlay loop muted playsInline
+                      />
+                    ) : (
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail Preview"
+                        className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => { setThumbnailFile(null); setThumbnailPreview(''); }}
@@ -1054,7 +1064,7 @@ const ProductForm = () => {
                   Choose Photo
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
                     onChange={handleThumbnailChange}
                     className="hidden"
                   />
@@ -1068,7 +1078,7 @@ const ProductForm = () => {
               <input
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
                 onChange={(e) => setGalleryFiles([...e.target.files])}
                 className="form-input text-xs"
               />
@@ -1080,11 +1090,19 @@ const ProductForm = () => {
                   <div className="flex flex-wrap gap-2">
                     {galleryFiles.map((file, idx) => (
                       <div key={idx} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="New Gallery"
-                          className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                        />
+                        {isVideo(file.name) ? (
+                          <video
+                            src={URL.createObjectURL(file)}
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                            autoPlay loop muted playsInline
+                          />
+                        ) : (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt="New Gallery"
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={() => handleRemoveGalleryFile(idx)}
@@ -1105,11 +1123,19 @@ const ProductForm = () => {
                   <div className="flex flex-wrap gap-2">
                     {existingImages.map((img) => (
                       <div key={img.id} className="relative">
-                        <img
-                          src={img.imageUrl}
-                          alt="Gallery"
-                          className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                        />
+                        {isVideo(img.imageUrl) ? (
+                          <video
+                            src={img.imageUrl}
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                            autoPlay loop muted playsInline
+                          />
+                        ) : (
+                          <img
+                            src={img.imageUrl}
+                            alt="Gallery"
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={() => handleRemoveExistingImage(img.id)}
