@@ -16,6 +16,7 @@ import ReviewList from '../pages/ReviewList';
 import Reports from '../pages/Reports';
 import Settings from '../pages/Settings';
 import AdminLogs from '../pages/AdminLogs';
+import SeasonCollection from '../pages/SeasonCollection';
 
 const AppRoutes = () => {
   return (
@@ -59,6 +60,9 @@ const AppRoutes = () => {
 
         {/* System & Profile Settings */}
         <Route path="settings" element={<Settings />} />
+
+        {/* Season Collection */}
+        <Route path="season-collection" element={<SeasonCollection />} />
 
         {/* Security Logs Audit Trail */}
         <Route path="logs" element={<AdminLogs />} />
