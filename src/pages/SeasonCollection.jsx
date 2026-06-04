@@ -519,7 +519,7 @@ const SeasonCollection = () => {
               )}
             </label>
             <input
-              type="url"
+              type="text"
               placeholder="https://... or /uploads/season/video.mp4"
               value={videoUrl}
               onChange={(e) => { setVideoUrl(e.target.value); setVideoAutoDetected(false); }}
@@ -609,7 +609,7 @@ const SeasonCollection = () => {
               Video URL <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <input
-              type="url"
+              type="text"
               placeholder="https://... or /uploads/season/video.mp4"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
