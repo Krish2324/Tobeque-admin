@@ -102,8 +102,12 @@ const CustomerList = () => {
       accessor: 'firstName',
       cell: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-650 flex items-center justify-center font-bold text-sm">
-            {row.firstName.substring(0, 1).toUpperCase()}{row.lastName.substring(0, 1).toUpperCase()}
+          <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-650 flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
+            {row.profilePhoto ? (
+              <img src={`http://localhost:5000${row.profilePhoto}`} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <>{row.firstName?.substring(0, 1).toUpperCase() || ''}{row.lastName?.substring(0, 1).toUpperCase() || ''}</>
+            )}
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-slate-800 dark:text-white">{row.firstName} {row.lastName}</span>

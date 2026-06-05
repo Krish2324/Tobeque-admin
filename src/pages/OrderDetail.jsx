@@ -176,9 +176,9 @@ const OrderDetail = () => {
                           />
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-800 dark:text-white">{item.productName}</span>
-                            {item.variants && (
+                            {item.variantDetails && (
                               <span className="text-[10px] text-slate-400 font-bold">
-                                {Object.entries(item.variants).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                {Object.entries(item.variantDetails).map(([k, v]) => `${k}: ${v}`).join(', ')}
                               </span>
                             )}
                           </div>
