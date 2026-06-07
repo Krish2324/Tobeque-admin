@@ -149,7 +149,7 @@ const CouponList = () => {
       accessor: 'discountValue',
       cell: (row) => (
         <span className="font-extrabold text-slate-800 dark:text-white">
-          {row.type === 'percentage' ? `${row.discountValue}% Off` : `$${row.discountValue} Off`}
+          {row.type === 'percentage' ? `${row.discountValue}% Off` : `₹${row.discountValue} Off`}
         </span>
       )
     },
@@ -264,7 +264,7 @@ const CouponList = () => {
                 className="form-input text-xs h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="fixed">Fixed Amount (₹)</option>
               </select>
             </div>
             <div>
@@ -284,7 +284,7 @@ const CouponList = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="form-label text-xs">Minimum Order Amount ($)</label>
+              <label className="form-label text-xs">Minimum Order Amount (₹)</label>
               <input
                 type="number"
                 min="0"

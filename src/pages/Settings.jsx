@@ -12,7 +12,7 @@ const Settings = () => {
   // Settings State
   const [storeName, setStoreName] = useState('');
   const [storeEmail, setStoreEmail] = useState('');
-  const [storeCurrency, setStoreCurrency] = useState('USD');
+  const [storeCurrency, setStoreCurrency] = useState('INR');
   
   // SMTP State
   const [smtpHost, setSmtpHost] = useState('');
@@ -41,7 +41,7 @@ const Settings = () => {
         const settings = res.data.settings;
         setStoreName(settings.storeName || '');
         setStoreEmail(settings.storeEmail || '');
-        setStoreCurrency(settings.storeCurrency || 'USD');
+        setStoreCurrency(settings.storeCurrency || 'INR');
         setSmtpHost(settings.smtpHost || '');
         setSmtpPort(settings.smtpPort || '587');
         setSmtpUser(settings.smtpUser || '');
