@@ -40,6 +40,7 @@ const ProductForm = () => {
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryColors, setGalleryColors] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
 
   // SEO Fields
@@ -182,6 +183,7 @@ const ProductForm = () => {
 
   const handleRemoveGalleryFile = (indexToRemove) => {
     setGalleryFiles(galleryFiles.filter((_, idx) => idx !== indexToRemove));
+    setGalleryColors(galleryColors.filter((_, idx) => idx !== indexToRemove));
   };
 
   // Helper to generate Cartesian product of variants options
@@ -310,6 +312,7 @@ const ProductForm = () => {
 
       for (let i = 0; i < galleryFiles.length; i++) {
         formData.append('images', galleryFiles[i]);
+        formData.append('imageColors', galleryColors[i] || '');
       }
 
       let res;
@@ -1079,7 +1082,11 @@ const ProductForm = () => {
                 type="file"
                 multiple
                 accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
-                onChange={(e) => setGalleryFiles([...e.target.files])}
+                onChange={(e) => {
+                  const files = [...e.target.files];
+                  setGalleryFiles(prev => [...prev, ...files]);
+                  setGalleryColors(prev => [...prev, ...files.map(() => '')]);
+                }}
                 className="form-input text-xs"
               />
               {galleryFiles.length > 0 && (
@@ -1110,6 +1117,17 @@ const ProductForm = () => {
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
+                        <input
+                          type="text"
+                          placeholder="Color name"
+                          value={galleryColors[idx] || ''}
+                          onChange={(e) => {
+                            const newCols = [...galleryColors];
+                            newCols[idx] = e.target.value;
+                            setGalleryColors(newCols);
+                          }}
+                          className="mt-1 form-input text-[9px] py-0.5 px-1 w-full text-center"
+                        />
                       </div>
                     ))}
                   </div>
