@@ -13,6 +13,8 @@ const Settings = () => {
   const [storeName, setStoreName] = useState('');
   const [storeEmail, setStoreEmail] = useState('');
   const [storeCurrency, setStoreCurrency] = useState('INR');
+  const [deliveryEstimateMin, setDeliveryEstimateMin] = useState('3');
+  const [deliveryEstimateMax, setDeliveryEstimateMax] = useState('5');
   
   // SMTP State
   const [smtpHost, setSmtpHost] = useState('');
@@ -42,6 +44,8 @@ const Settings = () => {
         setStoreName(settings.storeName || '');
         setStoreEmail(settings.storeEmail || '');
         setStoreCurrency(settings.storeCurrency || 'INR');
+        setDeliveryEstimateMin(settings.deliveryEstimateMin || '3');
+        setDeliveryEstimateMax(settings.deliveryEstimateMax || '5');
         setSmtpHost(settings.smtpHost || '');
         setSmtpPort(settings.smtpPort || '587');
         setSmtpUser(settings.smtpUser || '');
@@ -87,6 +91,8 @@ const Settings = () => {
           storeName,
           storeEmail,
           storeCurrency,
+          deliveryEstimateMin,
+          deliveryEstimateMax,
           smtpHost,
           smtpPort,
           smtpUser,
@@ -218,6 +224,26 @@ const Settings = () => {
                     <option value="GBP">GBP - British Pound Sterling (£)</option>
                     <option value="INR">INR - Indian Rupee (₹)</option>
                   </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label text-xs">Delivery Estimate Min (Days)</label>
+                    <input
+                      type="number"
+                      value={deliveryEstimateMin}
+                      onChange={(e) => setDeliveryEstimateMin(e.target.value)}
+                      className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label text-xs">Delivery Estimate Max (Days)</label>
+                    <input
+                      type="number"
+                      value={deliveryEstimateMax}
+                      onChange={(e) => setDeliveryEstimateMax(e.target.value)}
+                      className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                 </div>
               </div>
             )}

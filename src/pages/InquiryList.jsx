@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
@@ -10,7 +11,7 @@ export default function InquiryList() {
 
   const fetchInquiries = async () => {
     try {
-      const { data } = await api.get('/inquiries');
+      const { data } = await api.get('/api/inquiries');
       setInquiries(data.data);
     } catch (error) {
       showNotification('Failed to load inquiries', 'error');
@@ -29,7 +30,7 @@ export default function InquiryList() {
     const nextStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
     
     try {
-      await api.put(`/inquiries/${id}/status`, { status: nextStatus });
+      await api.put(`/api/inquiries/${id}/status`, { status: nextStatus });
       showNotification(`Marked as ${nextStatus}`, 'success');
       fetchInquiries();
     } catch (error) {
@@ -40,7 +41,7 @@ export default function InquiryList() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this inquiry?')) return;
     try {
-      await api.delete(`/inquiries/${id}`);
+      await api.delete(`/api/inquiries/${id}`);
       showNotification('Inquiry deleted', 'success');
       fetchInquiries();
     } catch (error) {
@@ -95,10 +96,10 @@ export default function InquiryList() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleDelete(row._id)}
-            className="w-8 h-8 rounded-full hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors"
+            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450 transition-colors"
             title="Delete Inquiry"
           >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )
