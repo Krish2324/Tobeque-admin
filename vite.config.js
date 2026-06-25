@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => {
           target: target,
           changeOrigin: true,
           secure: false
+        },
+        '/src/assets': {
+          target: 'http://localhost:5173',
+          changeOrigin: true,
+          secure: false
         }
       }
     }

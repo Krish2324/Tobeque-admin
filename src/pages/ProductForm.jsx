@@ -5,7 +5,10 @@ import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import RichTextEditor from '../components/RichTextEditor';
 
-const isVideo = (url) => url && typeof url === 'string' && url.match(/\.(mp4|webm|ogg|mov)$/i);
+const isVideo = (url, file) => {
+  if (file && file.type) return file.type.startsWith('video/');
+  return url && typeof url === 'string' && !!url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+};
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -1037,7 +1040,7 @@ const ProductForm = () => {
               <div className="flex items-center gap-4 mt-2">
                 {thumbnailPreview ? (
                   <div className="relative">
-                    {isVideo(thumbnailPreview) ? (
+                    {isVideo(thumbnailPreview, thumbnailFile) ? (
                       <video
                         src={thumbnailPreview}
                         className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
@@ -1097,7 +1100,7 @@ const ProductForm = () => {
                   <div className="flex flex-wrap gap-2">
                     {galleryFiles.map((file, idx) => (
                       <div key={idx} className="relative">
-                        {isVideo(file.name) ? (
+                        {isVideo(file.name, file) ? (
                           <video
                             src={URL.createObjectURL(file)}
                             className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
