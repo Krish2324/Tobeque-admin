@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, FolderTree, ShoppingCart, Users,
   Ticket, ClipboardList, Image, Star, FileBarChart, Settings,
-  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers
+  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,6 +19,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
     { name: 'Orders', path: '/orders', icon: ShoppingCart, roles: ['superadmin', 'manager', 'editor'] },
     { name: 'Customers', path: '/customers', icon: Users, roles: ['superadmin', 'manager'] },
     { name: 'Coupons', path: '/coupons', icon: Ticket, roles: ['superadmin', 'manager'] },
+    { name: 'Inquiries', path: '/inquiries', icon: MessageSquare, roles: ['superadmin', 'manager', 'editor'] },
     { name: 'Inventory Logs', path: '/inventory', icon: ClipboardList, roles: ['superadmin', 'manager'] },
     { name: 'Promo Banners', path: '/banners', icon: Image, roles: ['superadmin', 'manager'] },
     { name: 'Season Collection', path: '/season-collection', icon: Layers, roles: ['superadmin', 'manager', 'editor'] },

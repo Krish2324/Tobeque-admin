@@ -17,6 +17,7 @@ import Reports from '../pages/Reports';
 import Settings from '../pages/Settings';
 import AdminLogs from '../pages/AdminLogs';
 import SeasonCollection from '../pages/SeasonCollection';
+import InquiryList from '../pages/InquiryList';
 
 const AppRoutes = () => {
   return (
@@ -54,6 +55,9 @@ const AppRoutes = () => {
 
         {/* Product Reviews */}
         <Route path="reviews" element={<ReviewList />} />
+
+        {/* Customer Inquiries */}
+        <Route path="inquiries" element={<InquiryList />} />
 
         {/* Financial Business Reports */}
         <Route path="reports" element={<Reports />} />
