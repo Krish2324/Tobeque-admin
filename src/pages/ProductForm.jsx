@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Image, Sparkles, Settings, Layers, Truck, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import RichTextEditor from '../components/RichTextEditor';
@@ -43,7 +43,6 @@ const ProductForm = () => {
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [galleryFiles, setGalleryFiles] = useState([]);
-  const [galleryColors, setGalleryColors] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
 
   // SEO Fields
@@ -186,7 +185,6 @@ const ProductForm = () => {
 
   const handleRemoveGalleryFile = (indexToRemove) => {
     setGalleryFiles(galleryFiles.filter((_, idx) => idx !== indexToRemove));
-    setGalleryColors(galleryColors.filter((_, idx) => idx !== indexToRemove));
   };
 
   // Helper to generate Cartesian product of variants options
@@ -264,6 +262,13 @@ const ProductForm = () => {
     setVariantsList(newVariants);
   };
 
+  const handleEditOption = (idx) => {
+    const opt = optionsList[idx];
+    setVariantOptName(opt.name);
+    setVariantOptVals(opt.values.join(', '));
+    handleRemoveOption(idx);
+  };
+
   // Submit Handler using Multi-part Form Data
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -315,7 +320,7 @@ const ProductForm = () => {
 
       for (let i = 0; i < galleryFiles.length; i++) {
         formData.append('images', galleryFiles[i]);
-        formData.append('imageColors', galleryColors[i] || '');
+        formData.append('imageColors', '');
       }
 
       let res;
@@ -843,13 +848,24 @@ const ProductForm = () => {
                         ))}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveOption(idx)}
-                      className="p-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleEditOption(idx)}
+                        className="p-1 rounded bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
+                        title="Edit Option"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveOption(idx)}
+                        className="p-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                        title="Remove Option"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -949,7 +965,7 @@ const ProductForm = () => {
                                   updated[idx].stock = e.target.value === '' ? '' : parseInt(e.target.value, 10);
                                   setVariantsList(updated);
                                 }}
-                                className="form-input text-xs py-1 px-2 max-w-[100px]"
+                                className="form-input text-xs py-1 px-2 max-w-[100px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="Stock"
                               />
                             </td>
@@ -1088,7 +1104,6 @@ const ProductForm = () => {
                 onChange={(e) => {
                   const files = [...e.target.files];
                   setGalleryFiles(prev => [...prev, ...files]);
-                  setGalleryColors(prev => [...prev, ...files.map(() => '')]);
                 }}
                 className="form-input text-xs"
               />
@@ -1120,17 +1135,6 @@ const ProductForm = () => {
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
-                        <input
-                          type="text"
-                          placeholder="Color name"
-                          value={galleryColors[idx] || ''}
-                          onChange={(e) => {
-                            const newCols = [...galleryColors];
-                            newCols[idx] = e.target.value;
-                            setGalleryColors(newCols);
-                          }}
-                          className="mt-1 form-input text-[9px] py-0.5 px-1 w-full text-center"
-                        />
                       </div>
                     ))}
                   </div>
