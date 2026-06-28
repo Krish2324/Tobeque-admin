@@ -138,14 +138,25 @@ const BannerList = () => {
   const columns = [
     {
       header: 'Slide Preview',
-      accessor: 'imageUrl',
-      cell: (row) => (
-        <img
-          src={row.imageUrl}
-          alt={row.title || 'Banner Slide'}
-          className="w-20 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
-        />
-      )
+      cell: (row) => {
+        const rawUrl = row.imageUrl ? row.imageUrl.replace(/\\/g, '/') : '';
+        const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+        const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
+        
+        return isVideo ? (
+          <video
+            src={mediaUrl}
+            className="w-20 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+            muted playsInline
+          />
+        ) : (
+          <img
+            src={mediaUrl}
+            alt={row.title || 'Banner Slide'}
+            className="w-20 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+          />
+        );
+      }
     },
     {
       header: 'Headline Info',
@@ -238,9 +249,32 @@ const BannerList = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
-                className="absolute inset-0 w-full h-full bg-cover bg-center flex flex-col justify-end p-8 md:p-12 text-white"
-                style={{ backgroundImage: `linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3)), url(${banners[previewIdx].imageUrl})` }}
+                className="absolute inset-0 w-full h-full flex flex-col justify-end p-8 md:p-12 text-white overflow-hidden"
+                style={{ 
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundImage: (() => {
+                    const rawUrl = banners[previewIdx].imageUrl ? banners[previewIdx].imageUrl.replace(/\\/g, '/') : '';
+                    const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+                    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
+                    return isVideo 
+                      ? 'linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3))' 
+                      : `linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3)), url(${mediaUrl})`;
+                  })()
+                }}
               >
+                {(() => {
+                  const rawUrl = banners[previewIdx].imageUrl ? banners[previewIdx].imageUrl.replace(/\\/g, '/') : '';
+                  const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+                  const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
+                  return isVideo ? (
+                    <video 
+                      src={mediaUrl} 
+                      muted playsInline 
+                      className="absolute inset-0 w-full h-full object-cover -z-10" 
+                    />
+                  ) : null;
+                })()}
                 <div className="max-w-md space-y-1 md:space-y-2">
                   <span className="text-[10px] bg-brand-600 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider self-start">
                     {banners[previewIdx].position}
@@ -349,10 +383,10 @@ const BannerList = () => {
               />
             </div>
             <div>
-              <label className="form-label text-xs">Upload Slide Image file</label>
+              <label className="form-label text-xs">Upload Slide Image/Video file</label>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={(e) => setImageFile(e.target.files[0])}
                 className="form-input text-xs"
               />
