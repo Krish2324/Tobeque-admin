@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create central Axios instance
 const api = axios.create({
-  baseURL: '', // Uses base host, which maps to Vite dev proxy!
+  baseURL: import.meta.env.VITE_API_URL || '', // Uses ENV in prod, Vite proxy in dev
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
