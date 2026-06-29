@@ -21,6 +21,8 @@ const SeasonCollection = () => {
   const [sortOrder, setSortOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
   const [imageOverride, setImageOverride] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   // Modal state
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -85,6 +87,8 @@ const SeasonCollection = () => {
     setSortOrder(String(items.length));
     setIsActive(true);
     setImageOverride('');
+    setImageFile(null);
+    setImagePreview('');
     setAddModalOpen(true);
   };
 
@@ -96,13 +100,22 @@ const SeasonCollection = () => {
     }
     setSaving(true);
     try {
-      const res = await axios.post('/api/season-collection', {
-        categoryId: selectedCategory.id || selectedCategory._id,
-        displayLabel: displayLabel || selectedCategory.name,
-        sortOrder: parseInt(sortOrder) || 0,
-        isActive,
-        imageOverride: imageOverride.trim() || null
+      const formData = new FormData();
+      formData.append('categoryId', selectedCategory.id || selectedCategory._id);
+      formData.append('displayLabel', displayLabel || selectedCategory.name);
+      formData.append('sortOrder', parseInt(sortOrder) || 0);
+      formData.append('isActive', isActive);
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      } else if (imageOverride.trim()) {
+        formData.append('imageOverride', imageOverride.trim());
+      }
+
+      const res = await axios.post('/api/season-collection', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
+
       if (res.data.success) {
         showNotification('Category added to Season Collection!', 'success');
         setAddModalOpen(false);
@@ -123,6 +136,8 @@ const SeasonCollection = () => {
     setSortOrder(String(item.sortOrder));
     setIsActive(item.isActive);
     setImageOverride(item.imageOverride || '');
+    setImageFile(null);
+    setImagePreview(item.imageOverride || '');
     setEditModalOpen(true);
   };
 
@@ -131,11 +146,21 @@ const SeasonCollection = () => {
     if (!editingItem) return;
     setSaving(true);
     try {
-      const res = await axios.put(`/api/season-collection/${editingItem.id}`, {
-        displayLabel,
-        sortOrder: parseInt(sortOrder) || 0,
-        isActive,
-        imageOverride: imageOverride.trim() || null
+      const formData = new FormData();
+      formData.append('displayLabel', displayLabel);
+      formData.append('sortOrder', parseInt(sortOrder) || 0);
+      formData.append('isActive', isActive);
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      } else if (imageOverride.trim()) {
+        formData.append('imageOverride', imageOverride.trim());
+      } else {
+        formData.append('imageOverride', ''); // Clear it
+      }
+
+      const res = await axios.put(`/api/season-collection/${editingItem.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data.success) {
         showNotification('Season Collection item updated!', 'success');
@@ -174,10 +199,22 @@ const SeasonCollection = () => {
   };
 
   const getImageUrl = (item) => {
+    // Return imagePreview if they just selected a new file in the modal
+    if (imagePreview && (item?.id === editingItem?.id)) return imagePreview;
+    
     if (item.imageOverride) return item.imageOverride;
     if (item.category?.image) return item.category.image;
     if (item.category?.banner) return item.category.banner;
     return null;
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setImageOverride('');
+    }
   };
 
   return (
@@ -461,17 +498,41 @@ const SeasonCollection = () => {
           <div>
             <label className="form-label text-xs flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-brand-500" />
-              Image URL Override <span className="text-slate-400 font-normal">(optional)</span>
+              Image Override <span className="text-slate-400 font-normal">(optional)</span>
             </label>
-            <input
-              type="text"
-              placeholder="/uploads/categories/custom.jpg"
-              value={imageOverride}
-              onChange={(e) => setImageOverride(e.target.value)}
-              className="form-input text-xs"
-            />
-            <p className="text-[10px] text-slate-400 mt-1">
-              Provide an image URL if you want to use a different image than the category's default image.
+            <div className="flex items-center gap-3 mt-1.5">
+              <div className="w-12 h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                {imagePreview || imageOverride ? (
+                  <img src={imagePreview || imageOverride} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-5 h-5 text-slate-400" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Or paste an image URL here..."
+                  value={imageOverride}
+                  onChange={(e) => {
+                    setImageOverride(e.target.value);
+                    setImageFile(null);
+                    setImagePreview('');
+                  }}
+                  className="form-input text-xs w-full"
+                />
+                <label className="btn-secondary text-xs cursor-pointer py-1.5 px-3 border border-slate-200 dark:border-slate-700 inline-block w-max">
+                  Upload Image File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">
+              Provide an image URL or upload a file if you want to use a different image than the category's default image.
             </p>
           </div>
 
@@ -548,16 +609,40 @@ const SeasonCollection = () => {
           <div>
             <label className="form-label text-xs flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-brand-500" />
-              Image URL Override <span className="text-slate-400 font-normal">(optional)</span>
+              Image Override <span className="text-slate-400 font-normal">(optional)</span>
             </label>
-            <input
-              type="text"
-              placeholder="/uploads/categories/custom.jpg"
-              value={imageOverride}
-              onChange={(e) => setImageOverride(e.target.value)}
-              className="form-input text-xs"
-            />
-            <p className="text-[10px] text-slate-400 mt-1">Leave blank to use the category image</p>
+            <div className="flex items-center gap-3 mt-1.5">
+              <div className="w-12 h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                {imagePreview || imageOverride ? (
+                  <img src={imagePreview || imageOverride} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-5 h-5 text-slate-400" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Or paste an image URL here..."
+                  value={imageOverride}
+                  onChange={(e) => {
+                    setImageOverride(e.target.value);
+                    setImageFile(null);
+                    setImagePreview('');
+                  }}
+                  className="form-input text-xs w-full"
+                />
+                <label className="btn-secondary text-xs cursor-pointer py-1.5 px-3 border border-slate-200 dark:border-slate-700 inline-block w-max">
+                  Upload Image File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">Leave blank to use the category image</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

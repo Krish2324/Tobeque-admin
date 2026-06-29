@@ -42,8 +42,10 @@ const ProductForm = () => {
   // File Upload State
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
-  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryFiles, setGalleryFiles] = useState([]); // new files to upload
+  const [galleryFileColors, setGalleryFileColors] = useState([]); // color tag per new file
   const [existingImages, setExistingImages] = useState([]);
+  const [existingImageColors, setExistingImageColors] = useState({}); // { [imageId]: colorString }
 
   // SEO Fields
   const [seoTitle, setSeoTitle] = useState('');
@@ -111,6 +113,10 @@ const ProductForm = () => {
         setBrandId(prod.brandId || '');
         setThumbnailPreview(prod.thumbnail || '');
         setExistingImages(prod.images || []);
+        // Restore existing color map
+        const colorMap = {};
+        (prod.images || []).forEach(img => { colorMap[img.id] = img.color || ''; });
+        setExistingImageColors(colorMap);
         setSeoTitle(prod.seoTitle || '');
         setSeoDescription(prod.seoDescription || '');
 
@@ -185,6 +191,7 @@ const ProductForm = () => {
 
   const handleRemoveGalleryFile = (indexToRemove) => {
     setGalleryFiles(galleryFiles.filter((_, idx) => idx !== indexToRemove));
+    setGalleryFileColors(galleryFileColors.filter((_, idx) => idx !== indexToRemove));
   };
 
   // Helper to generate Cartesian product of variants options
@@ -320,7 +327,13 @@ const ProductForm = () => {
 
       for (let i = 0; i < galleryFiles.length; i++) {
         formData.append('images', galleryFiles[i]);
-        formData.append('imageColors', '');
+        // Send the color tag; empty string means "no color assigned"
+        formData.append('imageColors', galleryFileColors[i] || '');
+      }
+
+      // Patch color on existing images if any changed
+      if (isEdit && Object.keys(existingImageColors).length > 0) {
+        formData.append('existingImageColors', JSON.stringify(existingImageColors));
       }
 
       let res;
@@ -1110,30 +1123,62 @@ const ProductForm = () => {
               {galleryFiles.length > 0 && (
                 <div className="mt-3 space-y-2">
                   <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold block">
-                    {galleryFiles.length} file(s) selected for gallery uploads.
+                    {galleryFiles.length} file(s) — assign a color to each for image swap on website
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2.5">
                     {galleryFiles.map((file, idx) => (
-                      <div key={idx} className="relative">
-                        {isVideo(file.name, file) ? (
-                          <video
-                            src={URL.createObjectURL(file)}
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                            autoPlay loop muted playsInline
-                          />
-                        ) : (
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt="New Gallery"
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                          />
-                        )}
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-150 dark:border-slate-800">
+                        <div className="relative shrink-0">
+                          {isVideo(file.name, file) ? (
+                            <video
+                              src={URL.createObjectURL(file)}
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                              autoPlay loop muted playsInline
+                            />
+                          ) : (
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt="New Gallery"
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate">{file.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {/* Color assignment dropdown — reads colors from variant options */}
+                            <select
+                              value={galleryFileColors[idx] || ''}
+                              onChange={(e) => {
+                                const updated = [...galleryFileColors];
+                                updated[idx] = e.target.value;
+                                setGalleryFileColors(updated);
+                              }}
+                              className="text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-brand-500"
+                            >
+                              <option value="">No color tag</option>
+                              {/* Populate from Color variant option if exists */}
+                              {optionsList
+                                .find(o => o.name.toLowerCase() === 'color')
+                                ?.values.map((val, vi) => (
+                                  <option key={vi} value={val}>{val}</option>
+                                ))
+                              }
+                            </select>
+                            {galleryFileColors[idx] && (
+                              <span
+                                className="w-4 h-4 rounded-full border border-black/10 shadow-sm inline-block"
+                                style={{ backgroundColor: galleryFileColors[idx].toLowerCase() }}
+                              />
+                            )}
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveGalleryFile(idx)}
-                          className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-sm hover:bg-rose-600 transition-colors"
+                          className="shrink-0 bg-rose-50 dark:bg-rose-950/20 text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
@@ -1144,29 +1189,54 @@ const ProductForm = () => {
               {/* Edit mode existing pictures lists */}
               {isEdit && existingImages.length > 0 && (
                 <div className="mt-4.5 space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Existing Gallery:</span>
-                  <div className="flex flex-wrap gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Existing Gallery — assign colors:</span>
+                  <div className="flex flex-col gap-2.5">
                     {existingImages.map((img) => (
-                      <div key={img.id} className="relative">
-                        {isVideo(img.imageUrl) ? (
-                          <video
-                            src={img.imageUrl}
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                            autoPlay loop muted playsInline
-                          />
-                        ) : (
-                          <img
-                            src={img.imageUrl}
-                            alt="Gallery"
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
-                          />
-                        )}
+                      <div key={img.id} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-150 dark:border-slate-800">
+                        <div className="relative shrink-0">
+                          {isVideo(img.imageUrl) ? (
+                            <video
+                              src={img.imageUrl}
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                              autoPlay loop muted playsInline
+                            />
+                          ) : (
+                            <img
+                              src={img.imageUrl}
+                              alt="Gallery"
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={existingImageColors[img.id] || ''}
+                              onChange={(e) => setExistingImageColors(prev => ({ ...prev, [img.id]: e.target.value }))}
+                              className="text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-brand-500"
+                            >
+                              <option value="">No color tag</option>
+                              {optionsList
+                                .find(o => o.name.toLowerCase() === 'color')
+                                ?.values.map((val, vi) => (
+                                  <option key={vi} value={val}>{val}</option>
+                                ))
+                              }
+                            </select>
+                            {existingImageColors[img.id] && (
+                              <span
+                                className="w-4 h-4 rounded-full border border-black/10 shadow-sm inline-block"
+                                style={{ backgroundColor: (existingImageColors[img.id] || '').toLowerCase() }}
+                              />
+                            )}
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveExistingImage(img.id)}
-                          className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 shadow-sm hover:bg-rose-600 transition-colors"
+                          className="shrink-0 bg-rose-50 dark:bg-rose-950/20 text-rose-500 hover:bg-rose-100 p-1.5 rounded-lg transition-colors"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
