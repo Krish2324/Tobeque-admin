@@ -355,7 +355,7 @@ const BannerList = () => {
               >
                 <option value="home_slider">Home Main Carousel Slider</option>
                 <option value="promo_top">Top Promotional slot</option>
-                <option value="promo_bottom">Bottom Grid banner</option>
+                <option value="promo_bottom">Home Bottom Banner</option>
                 <option value="mobile_app">Mobile screens popups</option>
                 <option value="collection_hero">Collection Page Hero</option>
               </select>

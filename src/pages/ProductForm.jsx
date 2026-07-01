@@ -38,10 +38,14 @@ const ProductForm = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
+  const [isOnSaleSection, setIsOnSaleSection] = useState(false);
+  const [isHotRightNow, setIsHotRightNow] = useState(false);
 
   // File Upload State
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [hotRightNowMediaFile, setHotRightNowMediaFile] = useState(null);
+  const [hotRightNowMediaPreview, setHotRightNowMediaPreview] = useState('');
   const [galleryFiles, setGalleryFiles] = useState([]); // new files to upload
   const [galleryFileColors, setGalleryFileColors] = useState([]); // color tag per new file
   const [existingImages, setExistingImages] = useState([]);
@@ -111,6 +115,9 @@ const ProductForm = () => {
         setIsFeatured(prod.isFeatured);
         setCategoryId(prod.categoryId || '');
         setBrandId(prod.brandId || '');
+        setIsOnSaleSection(prod.isOnSaleSection || false);
+        setIsHotRightNow(prod.isHotRightNow || false);
+        setHotRightNowMediaPreview(prod.hotRightNowMedia || '');
         setThumbnailPreview(prod.thumbnail || '');
         setExistingImages(prod.images || []);
         // Restore existing color map
@@ -172,6 +179,14 @@ const ProductForm = () => {
     if (file) {
       setThumbnailFile(file);
       setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleHotRightNowMediaChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setHotRightNowMediaFile(file);
+      setHotRightNowMediaPreview(URL.createObjectURL(file));
     }
   };
 
@@ -301,6 +316,8 @@ const ProductForm = () => {
       formData.append('dimensions', dimensions);
       formData.append('status', status);
       formData.append('isFeatured', isFeatured);
+      formData.append('isOnSaleSection', isOnSaleSection);
+      formData.append('isHotRightNow', isHotRightNow);
       formData.append('categoryId', categoryId);
       formData.append('brandId', brandId);
       formData.append('seoTitle', seoTitle);
@@ -323,6 +340,10 @@ const ProductForm = () => {
 
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
+      }
+      
+      if (hotRightNowMediaFile) {
+        formData.append('hotRightNowMedia', hotRightNowMediaFile);
       }
 
       for (let i = 0; i < galleryFiles.length; i++) {
@@ -1055,6 +1076,77 @@ const ProductForm = () => {
                 Mark as Featured Product
               </label>
             </div>
+
+            <div className="flex items-center gap-3 py-2">
+              <input
+                type="checkbox"
+                id="onSaleSection"
+                checked={isOnSaleSection}
+                onChange={(e) => setIsOnSaleSection(e.target.checked)}
+                className="w-4 h-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
+              />
+              <label htmlFor="onSaleSection" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Show in On Sale Section
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 py-2">
+              <input
+                type="checkbox"
+                id="hotRightNow"
+                checked={isHotRightNow}
+                onChange={(e) => setIsHotRightNow(e.target.checked)}
+                className="w-4 h-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
+              />
+              <label htmlFor="hotRightNow" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Show in Hot Right Now
+              </label>
+            </div>
+            
+            {isHotRightNow && (
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <label className="form-label text-xs">Hot Right Now Vertical Media (Image/Video)</label>
+                <div className="flex items-center gap-4 mt-2">
+                  {hotRightNowMediaPreview ? (
+                    <div className="relative">
+                      {isVideo(hotRightNowMediaPreview, hotRightNowMediaFile) ? (
+                        <video
+                          src={hotRightNowMediaPreview}
+                          className="w-16 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+                          autoPlay loop muted playsInline
+                        />
+                      ) : (
+                        <img
+                          src={hotRightNowMediaPreview}
+                          alt="Hot Right Now Preview"
+                          className="w-16 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setHotRightNowMediaFile(null); setHotRightNowMediaPreview(''); }}
+                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm hover:bg-rose-600 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-24 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                      <Image className="w-6 h-6" />
+                    </div>
+                  )}
+                  <label className="btn-secondary text-xs cursor-pointer py-2 px-3 border border-slate-200 dark:border-slate-700">
+                    Choose File
+                    <input
+                      type="file"
+                      accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
+                      onChange={handleHotRightNowMediaChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Media Images upload */}
