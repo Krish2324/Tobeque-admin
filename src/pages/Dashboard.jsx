@@ -12,8 +12,10 @@ import axios from 'axios';
 import StatsCard from '../components/StatsCard';
 import { SkeletonDashboard } from '../components/Skeleton';
 import { useNotification } from '../context/NotificationContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Dashboard = () => {
+  const { currencySymbol } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const { showNotification } = useNotification();
@@ -82,7 +84,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total Gross Revenue"
-          value={`₹${widgets.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+          value={`${currencySymbol}${widgets.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
           icon={IndianRupee}
           trend={{ type: 'up', value: '14.2%' }}
           description="versus past month"
@@ -117,7 +119,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-white dark:bg-dark-850 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl shadow-sm">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Avg Order Value (AOV)</span>
-          <span className="text-sm font-extrabold text-slate-800 dark:text-white">₹823.61</span>
+          <span className="text-sm font-extrabold text-slate-800 dark:text-white">{currencySymbol}823.61</span>
           <span className="text-[9px] font-bold text-emerald-500">+1.2% this week</span>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-slate-100 dark:border-slate-800/80 pl-4">
@@ -169,7 +171,7 @@ const Dashboard = () => {
                     fontSize: '12px'
                   }} 
                 />
-                <Area type="monotone" dataKey="sales" name="Revenue (₹)" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                <Area type="monotone" dataKey="sales" name={`Revenue (${currencySymbol})`} stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -201,7 +203,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex flex-col items-end flex-shrink-0">
                     <span className="font-extrabold text-slate-800 dark:text-white">{prod.totalSold} sold</span>
-                    <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold">₹{parseFloat(prod.totalRevenue).toLocaleString()} rev</span>
+                    <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold">{currencySymbol}{parseFloat(prod.totalRevenue).toLocaleString()} rev</span>
                   </div>
                 </div>
               ))
@@ -248,7 +250,7 @@ const Dashboard = () => {
                         <span className="text-[10px] text-slate-400">{ord.user?.email}</span>
                       </div>
                     </td>
-                    <td className="py-3 font-extrabold text-slate-800 dark:text-white">₹{parseFloat(ord.totalAmount).toFixed(2)}</td>
+                    <td className="py-3 font-extrabold text-slate-800 dark:text-white">{currencySymbol}{parseFloat(ord.totalAmount).toFixed(2)}</td>
                     <td className="py-3">{getStatusBadge(ord.orderStatus)}</td>
                     <td className="py-3 text-right">
                       <Link to={`/orders/${ord.id}`} className="inline-flex p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-350 dark:hover:text-white">

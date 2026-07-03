@@ -4,10 +4,12 @@ import { Eye, Search, Filter, ShoppingBag, IndianRupee, RefreshCw } from 'lucide
 import axios from 'axios';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { currencySymbol } = useCurrency();
 
   // Filters & Pagination State
   const [search, setSearch] = useState('');
@@ -106,7 +108,7 @@ const OrderList = () => {
       header: 'Total Cost',
       accessor: 'totalAmount',
       sortable: true,
-      cell: (row) => <span className="font-extrabold text-slate-850 dark:text-white">${parseFloat(row.totalAmount).toFixed(2)}</span>
+      cell: (row) => <span className="font-extrabold text-slate-850 dark:text-white">{currencySymbol}{parseFloat(row.totalAmount).toFixed(2)}</span>
     },
     {
       header: 'Date',

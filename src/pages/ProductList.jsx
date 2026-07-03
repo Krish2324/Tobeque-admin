@@ -5,8 +5,10 @@ import axios from 'axios';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const ProductList = () => {
+  const { currencySymbol } = useCurrency();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -138,11 +140,11 @@ const ProductList = () => {
         <div className="flex flex-col">
           {row.discountPrice ? (
             <>
-              <span className="font-extrabold text-slate-800 dark:text-white">₹{parseFloat(row.discountPrice).toFixed(2)}</span>
-              <span className="text-[10px] text-rose-500 line-through">₹{parseFloat(row.price).toFixed(2)}</span>
+              <span className="font-extrabold text-slate-800 dark:text-white">{currencySymbol}{parseFloat(row.discountPrice).toFixed(2)}</span>
+              <span className="text-[10px] text-rose-500 line-through">{currencySymbol}{parseFloat(row.price).toFixed(2)}</span>
             </>
           ) : (
-            <span className="font-extrabold text-slate-850 dark:text-white">₹{parseFloat(row.price).toFixed(2)}</span>
+            <span className="font-extrabold text-slate-850 dark:text-white">{currencySymbol}{parseFloat(row.price).toFixed(2)}</span>
           )}
         </div>
       )

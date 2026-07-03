@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
       <NotificationProvider>
         <ThemeProvider>
           <AuthProvider>
-            <AppRoutes />
+            <CurrencyProvider>
+              <AppRoutes />
+            </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>
       </NotificationProvider>

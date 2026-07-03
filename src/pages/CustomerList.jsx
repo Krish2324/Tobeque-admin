@@ -5,8 +5,10 @@ import Table from '../components/Table';
 import Modal from '../components/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const CustomerList = () => {
+  const { currencySymbol } = useCurrency();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -279,7 +281,7 @@ const CustomerList = () => {
                     {customerOrders.map((ord) => (
                       <tr key={ord.id} className="hover:bg-slate-50/20">
                         <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">{ord.orderNumber}</td>
-                        <td className="px-4 py-3 font-extrabold text-slate-800 dark:text-white">₹{parseFloat(ord.totalAmount).toFixed(2)}</td>
+                        <td className="px-4 py-3 font-extrabold text-slate-800 dark:text-white">{currencySymbol}{parseFloat(ord.totalAmount).toFixed(2)}</td>
                         <td className="px-4 py-3 text-slate-450 font-medium">
                           {new Date(ord.createdAt).toLocaleDateString()}
                         </td>

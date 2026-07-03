@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
+import { useCurrency } from '../context/CurrencyContext';
 import RichTextEditor from '../components/RichTextEditor';
 
 const isVideo = (url, file) => {
@@ -12,6 +13,7 @@ const isVideo = (url, file) => {
 
 const ProductForm = () => {
   const { id } = useParams();
+  const { currencySymbol } = useCurrency();
   const isEdit = !!id;
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -555,7 +557,7 @@ const ProductForm = () => {
                     {/* Prices */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="form-label text-xs">Regular price (₹) *</label>
+                        <label className="form-label text-xs">Regular price ({currencySymbol}) *</label>
                         <input
                           type="number"
                           required
@@ -568,7 +570,7 @@ const ProductForm = () => {
                         />
                       </div>
                       <div>
-                        <label className="form-label text-xs">Sale price (₹)</label>
+                        <label className="form-label text-xs">Sale price ({currencySymbol})</label>
                         <input
                           type="number"
                           min="0"
@@ -582,7 +584,7 @@ const ProductForm = () => {
                     </div>
 
                     {/* Tax Settings */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
                       <div>
                         <label className="form-label text-xs">Tax status</label>
                         <select
@@ -617,6 +619,21 @@ const ProductForm = () => {
                           className="form-input text-xs"
                         />
                         <span className="text-[9px] text-slate-450 dark:text-slate-500 mt-1 block">Mandatory for GST.</span>
+                      </div>
+                      <div>
+                        <label className="form-label text-xs text-brand-600 dark:text-brand-400 font-bold">GST Rate (%) *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          placeholder="18"
+                          value={taxRate}
+                          onChange={(e) => setTaxRate(e.target.value)}
+                          className="form-input text-xs border-brand-200 dark:border-brand-800/30 bg-brand-50/30 dark:bg-brand-900/10 focus:ring-brand-500 focus:border-brand-500"
+                          required
+                        />
+                        <span className="text-[9px] text-slate-450 dark:text-slate-500 mt-1 block">Included in regular price.</span>
                       </div>
                     </div>
 
@@ -947,7 +964,7 @@ const ProductForm = () => {
                       <tr className="bg-slate-50 dark:bg-dark-850/50 border-b border-slate-200/60 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                         <th className="p-3">Variation</th>
                         <th className="p-3">Variant SKU</th>
-                        <th className="p-3">Price (₹)</th>
+                        <th className="p-3">Price ({currencySymbol})</th>
                         <th className="p-3">Stock Quantity</th>
                       </tr>
                     </thead>

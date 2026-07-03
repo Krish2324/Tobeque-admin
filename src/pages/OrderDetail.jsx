@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Printer, Truck, FileText, User, ShoppingBag, CreditCard, ChevronRight } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Printer, Truck, FileText, User, ShoppingBag, CreditCard, ChevronRight, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const OrderDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { currencySymbol } = useCurrency();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -30,7 +33,7 @@ const OrderDetail = () => {
         setPaymentStatus(ord.paymentStatus);
         setShippingStatus(ord.shippingStatus || 'pending');
         setTrackingNumber(ord.trackingNumber || '');
-        setAdminNotes(ord.notes || '');
+        setAdminNotes(ord.adminNotes || '');
       }
     } catch (err) {
       console.error('Error fetching order details:', err);
@@ -54,7 +57,7 @@ const OrderDetail = () => {
         paymentStatus,
         shippingStatus,
         trackingNumber,
-        notes: adminNotes
+        adminNotes
       });
       if (res.data.success) {
         showNotification('Order status and logs successfully processed!', 'success');
@@ -71,6 +74,19 @@ const OrderDetail = () => {
   // Open system print dialog
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete this order?')) return;
+    try {
+      const res = await axios.delete(`/api/orders/${id}`);
+      if (res.data.success) {
+        showNotification('Order deleted successfully', 'success');
+        navigate('/orders');
+      }
+    } catch (err) {
+      showNotification('Failed to delete order', 'error');
+    }
   };
 
   if (loading) {
@@ -133,13 +149,22 @@ const OrderDetail = () => {
           </div>
         </div>
 
-        <button
-          onClick={handlePrint}
-          className="btn-primary py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20"
-        >
-          <Printer className="w-4.5 h-4.5" />
-          Print / Save Receipt
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleDeleteOrder}
+            className="btn-danger py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center gap-2"
+          >
+            <Trash2 className="w-4.5 h-4.5" />
+            Delete Order
+          </button>
+          <button
+            onClick={handlePrint}
+            className="btn-primary py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2"
+          >
+            <Printer className="w-4.5 h-4.5" />
+            Print / Save Receipt
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-full">
@@ -185,10 +210,10 @@ const OrderDetail = () => {
                         </div>
                       </td>
                       <td className="py-4 font-semibold text-slate-500 dark:text-slate-400 uppercase">{item.sku}</td>
-                      <td className="py-4 text-center font-bold text-slate-700 dark:text-slate-200">₹{parseFloat(item.price).toFixed(2)}</td>
+                      <td className="py-4 text-center font-bold text-slate-700 dark:text-slate-200">{currencySymbol}{parseFloat(item.price).toFixed(2)}</td>
                       <td className="py-4 text-center font-semibold text-slate-800 dark:text-white">{item.quantity}</td>
                       <td className="py-4 text-right font-extrabold text-slate-850 dark:text-white">
-                        ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        {currencySymbol}{(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -200,25 +225,25 @@ const OrderDetail = () => {
             <div className="border-t border-slate-100 dark:border-slate-850 pt-4 flex flex-col items-end gap-2 text-xs">
               <div className="flex justify-between w-64 text-slate-450 dark:text-slate-400">
                 <span>Subtotal:</span>
-                <span className="font-semibold text-slate-750 dark:text-slate-300">₹{parseFloat(order.subtotal).toFixed(2)}</span>
+                <span className="font-semibold text-slate-750 dark:text-slate-300">{currencySymbol}{parseFloat(order.subtotal).toFixed(2)}</span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between w-64 text-rose-500">
-                  <span>Discounts Applied:</span>
-                  <span className="font-semibold">-₹{parseFloat(order.discountAmount).toFixed(2)}</span>
+                  <span>Discounts Applied {order.couponCode && `(${order.couponCode})`}:</span>
+                  <span className="font-semibold">-{currencySymbol}{parseFloat(order.discountAmount).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between w-64 text-slate-450 dark:text-slate-400">
                 <span>Sales Tax:</span>
-                <span className="font-semibold text-slate-750 dark:text-slate-300">₹{parseFloat(order.taxAmount).toFixed(2)}</span>
+                <span className="font-semibold text-slate-750 dark:text-slate-300">{currencySymbol}{parseFloat(order.taxAmount).toFixed(2)}</span>
               </div>
               <div className="flex justify-between w-64 text-slate-450 dark:text-slate-400">
                 <span>Shipping cost:</span>
-                <span className="font-semibold text-slate-750 dark:text-slate-300">₹{parseFloat(order.shippingCost).toFixed(2)}</span>
+                <span className="font-semibold text-slate-750 dark:text-slate-300">{currencySymbol}{parseFloat(order.shippingCost).toFixed(2)}</span>
               </div>
               <div className="flex justify-between w-64 text-sm font-extrabold text-slate-850 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <span>Grand Total:</span>
-                <span>₹{parseFloat(order.totalAmount).toFixed(2)}</span>
+                <span>{currencySymbol}{parseFloat(order.totalAmount).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -261,6 +286,19 @@ const OrderDetail = () => {
               )}
             </div>
           </div>
+          
+          {/* Customer Order Notes */}
+          {order.notes && (
+            <div className="glass-card p-6 space-y-3 print-full">
+              <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-850">
+                <FileText className="w-4 h-4 text-amber-500" />
+                <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">Customer Order Notes</h4>
+              </div>
+              <div className="text-xs text-slate-650 dark:text-slate-350 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                <p className="italic">"{order.notes}"</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar Column - Management Tools */}

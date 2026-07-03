@@ -4,8 +4,10 @@ import axios from 'axios';
 import Table from '../components/Table';
 import StatsCard from '../components/StatsCard';
 import { useNotification } from '../context/NotificationContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Reports = () => {
+  const { currencySymbol } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -68,22 +70,22 @@ const Reports = () => {
     {
       header: 'Tax Amount',
       accessor: 'taxAmount',
-      cell: (row) => <span className="text-xs text-slate-650">₹{parseFloat(row.taxAmount).toFixed(2)}</span>
+      cell: (row) => <span className="text-xs text-slate-650">{currencySymbol}{parseFloat(row.taxAmount).toFixed(2)}</span>
     },
     {
       header: 'Shipping Fee',
       accessor: 'shippingCost',
-      cell: (row) => <span className="text-xs text-slate-600">₹{parseFloat(row.shippingCost).toFixed(2)}</span>
+      cell: (row) => <span className="text-xs text-slate-600">{currencySymbol}{parseFloat(row.shippingCost).toFixed(2)}</span>
     },
     {
       header: 'Promo Discount',
       accessor: 'discountAmount',
-      cell: (row) => <span className="text-xs text-rose-500">-₹{parseFloat(row.discountAmount).toFixed(2)}</span>
+      cell: (row) => <span className="text-xs text-rose-500">-{currencySymbol}{parseFloat(row.discountAmount).toFixed(2)}</span>
     },
     {
       header: 'Settlement Amount',
       accessor: 'totalAmount',
-      cell: (row) => <span className="font-extrabold text-slate-800 dark:text-white">₹{parseFloat(row.totalAmount).toFixed(2)}</span>
+      cell: (row) => <span className="font-extrabold text-slate-800 dark:text-white">{currencySymbol}{parseFloat(row.totalAmount).toFixed(2)}</span>
     }
   ];
 
@@ -140,28 +142,28 @@ const Reports = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Settle Revenue Amount"
-            value={`₹${summary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            value={`${currencySymbol}${summary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
             icon={IndianRupee}
             description="gross settlement in range"
             color="emerald"
           />
           <StatsCard
             title="Average Ticket Sales"
-            value={`₹${summary.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            value={`${currencySymbol}${summary.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
             icon={TrendingUp}
             description="order checkout mean size"
             color="brand"
           />
           <StatsCard
             title="Total Tax Collected"
-            value={`₹${summary.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            value={`${currencySymbol}${summary.totalTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
             icon={FileBarChart}
             description="sales and regional VAT tax"
             color="sky"
           />
           <StatsCard
             title="Coupons Discount values"
-            value={`₹${summary.totalDiscounts.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            value={`${currencySymbol}${summary.totalDiscounts.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
             icon={Tag}
             description="promo codes deductions"
             color="rose"
