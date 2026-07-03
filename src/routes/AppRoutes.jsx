@@ -18,6 +18,10 @@ import Settings from '../pages/Settings';
 import AdminLogs from '../pages/AdminLogs';
 import SeasonCollection from '../pages/SeasonCollection';
 import InquiryList from '../pages/InquiryList';
+import JobApplicationList from '../pages/JobApplicationList';
+import FAQList from '../pages/FAQList';
+import RefundRequestList from '../pages/RefundRequestList';
+import SubscriberList from '../pages/SubscriberList';
 
 const AppRoutes = () => {
   return (
@@ -58,6 +62,18 @@ const AppRoutes = () => {
 
         {/* Customer Inquiries */}
         <Route path="inquiries" element={<InquiryList />} />
+
+        {/* Job Applications */}
+        <Route path="job-applications" element={<JobApplicationList />} />
+
+        {/* FAQ Management */}
+        <Route path="faqs" element={<FAQList />} />
+
+        {/* Refund Requests */}
+        <Route path="refund-requests" element={<RefundRequestList />} />
+
+        {/* Newsletter Subscribers */}
+        <Route path="subscribers" element={<SubscriberList />} />
 
         {/* Financial Business Reports */}
         <Route path="reports" element={<Reports />} />
