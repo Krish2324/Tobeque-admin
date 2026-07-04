@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save, Plus, X } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,8 @@ const Settings = () => {
   const [storeCurrency, setStoreCurrency] = useState('INR');
   const [deliveryEstimateMin, setDeliveryEstimateMin] = useState('3');
   const [deliveryEstimateMax, setDeliveryEstimateMax] = useState('5');
+  const [gstBrackets, setGstBrackets] = useState('0, 5, 12, 18, 28');
+  const [newGstBracket, setNewGstBracket] = useState('');
   
   // SMTP State
   const [smtpHost, setSmtpHost] = useState('');
@@ -46,6 +48,7 @@ const Settings = () => {
         setStoreCurrency(settings.storeCurrency || 'INR');
         setDeliveryEstimateMin(settings.deliveryEstimateMin || '3');
         setDeliveryEstimateMax(settings.deliveryEstimateMax || '5');
+        setGstBrackets(settings.gstBrackets || '0, 5, 12, 18, 28');
         setSmtpHost(settings.smtpHost || '');
         setSmtpPort(settings.smtpPort || '587');
         setSmtpUser(settings.smtpUser || '');
@@ -93,6 +96,7 @@ const Settings = () => {
           storeCurrency,
           deliveryEstimateMin,
           deliveryEstimateMax,
+          gstBrackets,
           smtpHost,
           smtpPort,
           smtpUser,
@@ -112,6 +116,27 @@ const Settings = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddGstBracket = (e) => {
+    e.preventDefault();
+    if (!newGstBracket.trim()) return;
+    const val = parseFloat(newGstBracket.trim());
+    if (isNaN(val)) return;
+    
+    let brackets = gstBrackets.split(',').map(b => parseFloat(b.trim())).filter(b => !isNaN(b));
+    if (!brackets.includes(val)) {
+      brackets.push(val);
+      brackets.sort((a, b) => a - b);
+      setGstBrackets(brackets.join(', '));
+    }
+    setNewGstBracket('');
+  };
+
+  const handleRemoveGstBracket = (valToRemove) => {
+    let brackets = gstBrackets.split(',').map(b => parseFloat(b.trim())).filter(b => !isNaN(b));
+    brackets = brackets.filter(b => b !== valToRemove);
+    setGstBrackets(brackets.join(', '));
   };
 
   if (loading) {
@@ -224,6 +249,39 @@ const Settings = () => {
                     <option value="GBP">GBP - British Pound Sterling (£)</option>
                     <option value="INR">INR - Indian Rupee (₹)</option>
                   </select>
+                </div>
+                <div>
+                  <label className="form-label text-xs">Available GST Brackets (%)</label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {gstBrackets.split(',').map(b => parseFloat(b.trim())).filter(b => !isNaN(b)).map((bracket, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-lg border border-brand-200 dark:border-brand-500/20 text-xs font-semibold">
+                        {bracket}%
+                        <button type="button" onClick={() => handleRemoveGstBracket(bracket)} className="hover:text-red-500 transition-colors">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 max-w-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 15"
+                      value={newGstBracket}
+                      onChange={(e) => setNewGstBracket(e.target.value)}
+                      onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddGstBracket(e); } }}
+                      className="form-input text-xs h-[38px] py-1 bg-slate-50 dark:bg-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddGstBracket}
+                      className="btn-primary h-[38px] px-4 rounded-xl flex items-center justify-center text-xs"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <span className="text-[9px] text-slate-450 dark:text-slate-500 mt-2 block">Add or remove GST rates. The first item in the list will be the default for new products.</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

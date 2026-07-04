@@ -75,6 +75,7 @@ const ProductForm = () => {
   const [callToAction, setCallToAction] = useState('WhatsApp us');
   const [preFilledMessage, setPreFilledMessage] = useState('');
   const [displaySettings, setDisplaySettings] = useState('Default');
+  const [availableGstBrackets, setAvailableGstBrackets] = useState([0, 5, 12, 18, 28]);
 
   // Dynamic Options/Variants State (e.g. Size: [M, L], Color: [Red, Blue])
   const [variantsList, setVariantsList] = useState([]); // [{ size: 'M', color: 'Black', stock: 10, price: 99.00, sku: 'TSH-M-BLK' }]
@@ -82,17 +83,32 @@ const ProductForm = () => {
   const [variantOptName, setVariantOptName] = useState('');
   const [variantOptVals, setVariantOptVals] = useState('');
 
-  // Fetch options lists
+  // Fetch options lists and settings
   const fetchDropdowns = async () => {
     try {
-      const [catRes, brandRes] = await Promise.all([
+      const [catRes, brandRes, settingsRes] = await Promise.all([
         axios.get('/api/categories'),
-        axios.get('/api/categories/brands/all')
+        axios.get('/api/categories/brands/all'),
+        axios.get('/api/settings')
       ]);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (brandRes.data.success) setBrands(brandRes.data.brands);
+      if (settingsRes.data.success) {
+        if (settingsRes.data.settings.gstBrackets) {
+          const parsedBrackets = settingsRes.data.settings.gstBrackets
+            .split(',')
+            .map((b) => parseFloat(b.trim()))
+            .filter((b) => !isNaN(b));
+          if (parsedBrackets.length > 0) {
+            setAvailableGstBrackets(parsedBrackets);
+            if (!isEdit) {
+              setTaxRate(parsedBrackets[0]);
+            }
+          }
+        }
+      }
     } catch (err) {
-      console.error('Error loading dropdown lists:', err);
+      console.error('Error loading dropdown lists or settings:', err);
     }
   };
 
@@ -622,18 +638,23 @@ const ProductForm = () => {
                       </div>
                       <div>
                         <label className="form-label text-xs text-brand-600 dark:text-brand-400 font-bold">GST Rate (%) *</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          placeholder="18"
+                        <select
+                          required
                           value={taxRate}
                           onChange={(e) => setTaxRate(e.target.value)}
-                          className="form-input text-xs border-brand-200 dark:border-brand-800/30 bg-brand-50/30 dark:bg-brand-900/10 focus:ring-brand-500 focus:border-brand-500"
-                          required
-                        />
-                        <span className="text-[9px] text-slate-450 dark:text-slate-500 mt-1 block">Included in regular price.</span>
+                          className="form-input text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50/50 border-brand-200 dark:border-brand-900/30 dark:bg-brand-900/10 focus:ring-brand-500/20"
+                        >
+                          {availableGstBrackets.map((bracket) => (
+                            <option key={bracket} value={bracket}>
+                              {bracket}% {bracket === 0 ? '(GST Exempt)' : ''}
+                            </option>
+                          ))}
+                          {/* If a legacy product has a weird tax rate, add it to options to avoid breaking the select */}
+                          {!availableGstBrackets.includes(parseFloat(taxRate || 0)) && (
+                            <option value={taxRate}>{taxRate}% (Legacy/Custom)</option>
+                          )}
+                        </select>
+                        <span className="text-[9px] text-slate-450 dark:text-slate-500 mt-1 block">Prices above are tax-inclusive based on this rate.</span>
                       </div>
                     </div>
 
