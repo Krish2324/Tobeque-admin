@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Search, ShieldAlert, Check, X, ShieldCheck } from 'lucide-react';
+import { Eye, Search, ShieldAlert, Check, X, ShieldCheck, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
@@ -65,6 +65,21 @@ const CustomerList = () => {
       }
     } catch (err) {
       showNotification(err.response?.data?.error || 'Failed to modify customer status.', 'error');
+    }
+  };
+
+  // Delete customer
+  const deleteCustomer = async (id, email) => {
+    if (!window.confirm(`Are you absolutely sure you want to delete ${email}? This action cannot be undone.`)) return;
+
+    try {
+      const res = await axios.delete(`/api/customers/${id}`);
+      if (res.data.success) {
+        showNotification(`Customer deleted successfully!`, 'success');
+        fetchCustomers();
+      }
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to delete customer.', 'error');
     }
   };
 
@@ -156,17 +171,27 @@ const CustomerList = () => {
           </button>
           
           {['superadmin', 'manager'].includes(admin?.role) && (
-            <button
-              onClick={() => toggleStatus(row.id, row.status, row.email)}
-              className={`p-2 rounded-xl flex items-center justify-center transition-colors ${
-                row.status === 'active'
-                  ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400'
-                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400'
-              }`}
-              title={row.status === 'active' ? 'Block Account' : 'Activate Account'}
-            >
-              {row.status === 'active' ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-            </button>
+            <>
+              <button
+                onClick={() => toggleStatus(row.id, row.status, row.email)}
+                className={`p-2 rounded-xl flex items-center justify-center transition-colors ${
+                  row.status === 'active'
+                    ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400'
+                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400'
+                }`}
+                title={row.status === 'active' ? 'Block Account' : 'Activate Account'}
+              >
+                {row.status === 'active' ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+              </button>
+              
+              <button
+                onClick={() => deleteCustomer(row.id, row.email)}
+                className="p-2 rounded-xl flex items-center justify-center transition-colors bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400"
+                title="Delete Customer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       )
