@@ -25,6 +25,7 @@ const BlogForm = () => {
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (isEditMode) {
@@ -54,6 +55,29 @@ const BlogForm = () => {
           ? { slug: value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') } 
           : {})
     }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+
+    setUploadingImage(true);
+    try {
+      const res = await axios.post('/api/blogs/upload-image', uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setFormData(prev => ({ ...prev, image: res.data.data.url }));
+      showNotification('Image uploaded successfully', 'success');
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to upload image', 'error');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -224,15 +248,39 @@ const BlogForm = () => {
             <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-2 border-b border-slate-100 dark:border-slate-800">Media & Excerpt</h3>
             
             <div>
-              <label className="form-label">Cover Image URL</label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
-                className="form-input mb-3"
-              />
+              <label className="form-label">Cover Image</label>
+              <div className="flex flex-col gap-2 mb-4">
+                <div className="relative border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center p-4 h-12 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer overflow-hidden group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
+                  />
+                  {uploadingImage ? (
+                    <div className="flex items-center justify-center text-sm text-slate-500 font-medium">
+                      <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Uploading...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center text-sm text-slate-600 dark:text-slate-300 font-medium group-hover:text-brand-600 transition-colors">
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Click to upload from your computer
+                    </div>
+                  )}
+                </div>
+                <div className="text-center text-xs text-slate-400 font-semibold uppercase tracking-widest my-1">OR</div>
+                <input
+                  type="url"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="Paste an external image URL here"
+                  className="form-input"
+                />
+              </div>
+
               {formData.image ? (
                 <img src={formData.image} alt="Cover preview" className="w-full h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700" />
               ) : (

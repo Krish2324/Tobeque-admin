@@ -24,6 +24,11 @@ import RefundRequestList from '../pages/RefundRequestList';
 import SubscriberList from '../pages/SubscriberList';
 import BlogList from '../pages/BlogList';
 import BlogForm from '../pages/BlogForm';
+import JobPostingList from '../pages/JobPostingList';
+import JobPostingForm from '../pages/JobPostingForm';
+import CommunityStyleList from '../pages/CommunityStyleList';
+import CommunityStyleForm from '../pages/CommunityStyleForm';
+import AboutUsSettings from '../pages/AboutUsSettings';
 
 const AppRoutes = () => {
   return (
@@ -93,6 +98,19 @@ const AppRoutes = () => {
         <Route path="style-journal" element={<BlogList />} />
         <Route path="style-journal/new" element={<BlogForm />} />
         <Route path="style-journal/edit/:id" element={<BlogForm />} />
+
+        {/* About Us (CMS) */}
+        <Route path="about-us" element={<AboutUsSettings />} />
+
+        {/* Job Postings (CMS) */}
+        <Route path="job-postings" element={<JobPostingList />} />
+        <Route path="job-postings/new" element={<JobPostingForm />} />
+        <Route path="job-postings/edit/:id" element={<JobPostingForm />} />
+
+        {/* Steal The Style (CMS) */}
+        <Route path="community-styles" element={<CommunityStyleList />} />
+        <Route path="community-styles/new" element={<CommunityStyleForm />} />
+        <Route path="community-styles/edit/:id" element={<CommunityStyleForm />} />
       </Route>
 
       {/* Wildcard Fallback redirection */}

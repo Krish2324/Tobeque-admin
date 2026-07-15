@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, FolderTree, ShoppingCart, Users,
   Ticket, ClipboardList, Image, Star, FileBarChart, Settings,
-  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen
+  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen, FileText, Camera, PenTool, List
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,8 +39,10 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
       items: [
         { name: 'Promo Banners', path: '/banners', icon: Image, roles: ['superadmin', 'manager'] },
         { name: 'Season Collection', path: '/season-collection', icon: Layers, roles: ['superadmin', 'manager', 'editor'] },
-        { name: 'Coupons', path: '/coupons', icon: Ticket, roles: ['superadmin', 'manager'] },
-        { name: 'Style Journal', path: '/style-journal', icon: BookOpen, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'Categories', path: '/categories', icon: List, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'Style Journal', path: '/style-journal', icon: PenTool, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'About Us', path: '/about-us', icon: Users, roles: ['superadmin', 'manager'] },
+        { name: 'Steal The Style', path: '/community-styles', icon: Camera, roles: ['superadmin', 'manager'] },
       ]
     },
     {
@@ -52,6 +54,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'Reviews', path: '/reviews', icon: Star, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'FAQs', path: '/faqs', icon: HelpCircle, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Newsletter', path: '/subscribers', icon: Mail, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'Job Postings', path: '/job-postings', icon: Briefcase, roles: ['superadmin', 'manager'] },
         { name: 'Job Applications', path: '/job-applications', icon: Briefcase, roles: ['superadmin', 'manager'] },
       ]
     },
