@@ -22,6 +22,8 @@ import JobApplicationList from '../pages/JobApplicationList';
 import FAQList from '../pages/FAQList';
 import RefundRequestList from '../pages/RefundRequestList';
 import SubscriberList from '../pages/SubscriberList';
+import BlogList from '../pages/BlogList';
+import BlogForm from '../pages/BlogForm';
 
 const AppRoutes = () => {
   return (
@@ -86,6 +88,11 @@ const AppRoutes = () => {
 
         {/* Security Logs Audit Trail */}
         <Route path="logs" element={<AdminLogs />} />
+
+        {/* Style Journal / Blog */}
+        <Route path="style-journal" element={<BlogList />} />
+        <Route path="style-journal/new" element={<BlogForm />} />
+        <Route path="style-journal/edit/:id" element={<BlogForm />} />
       </Route>
 
       {/* Wildcard Fallback redirection */}

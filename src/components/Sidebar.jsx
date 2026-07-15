@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, FolderTree, ShoppingCart, Users,
   Ticket, ClipboardList, Image, Star, FileBarChart, Settings,
-  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail
+  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,6 +40,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'Promo Banners', path: '/banners', icon: Image, roles: ['superadmin', 'manager'] },
         { name: 'Season Collection', path: '/season-collection', icon: Layers, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Coupons', path: '/coupons', icon: Ticket, roles: ['superadmin', 'manager'] },
+        { name: 'Style Journal', path: '/style-journal', icon: BookOpen, roles: ['superadmin', 'manager', 'editor'] },
       ]
     },
     {
