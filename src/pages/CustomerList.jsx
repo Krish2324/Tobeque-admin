@@ -3,6 +3,7 @@ import { Eye, Search, ShieldAlert, Check, X, ShieldCheck, Trash2 } from 'lucide-
 import axios from 'axios';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -28,6 +29,8 @@ const CustomerList = () => {
 
   const { showNotification } = useNotification();
   const { admin } = useAuth();
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, email: '' });
+  const [statusModal, setStatusModal] = useState({ open: false, id: null, email: '', currentStatus: '' });
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -55,8 +58,6 @@ const CustomerList = () => {
   // Block/unblock toggle
   const toggleStatus = async (id, currentStatus, email) => {
     const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
-    if (!window.confirm(`Are you sure you want to change state of ${email} to "${nextStatus.toUpperCase()}"?`)) return;
-
     try {
       const res = await axios.put(`/api/customers/${id}/status`, { status: nextStatus });
       if (res.data.success) {
@@ -65,13 +66,13 @@ const CustomerList = () => {
       }
     } catch (err) {
       showNotification(err.response?.data?.error || 'Failed to modify customer status.', 'error');
+    } finally {
+      setStatusModal({ open: false, id: null, email: '', currentStatus: '' });
     }
   };
 
   // Delete customer
   const deleteCustomer = async (id, email) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete ${email}? This action cannot be undone.`)) return;
-
     try {
       const res = await axios.delete(`/api/customers/${id}`);
       if (res.data.success) {
@@ -80,6 +81,8 @@ const CustomerList = () => {
       }
     } catch (err) {
       showNotification(err.response?.data?.error || 'Failed to delete customer.', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null, email: '' });
     }
   };
 
@@ -173,7 +176,7 @@ const CustomerList = () => {
           {['superadmin', 'manager'].includes(admin?.role) && (
             <>
               <button
-                onClick={() => toggleStatus(row.id, row.status, row.email)}
+                onClick={() => setStatusModal({ open: true, id: row.id, email: row.email, currentStatus: row.status })}
                 className={`p-2 rounded-xl flex items-center justify-center transition-colors ${
                   row.status === 'active'
                     ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400'
@@ -185,7 +188,7 @@ const CustomerList = () => {
               </button>
               
               <button
-                onClick={() => deleteCustomer(row.id, row.email)}
+                onClick={() => setDeleteModal({ open: true, id: row.id, email: row.email })}
                 className="p-2 rounded-xl flex items-center justify-center transition-colors bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400"
                 title="Delete Customer"
               >
@@ -324,6 +327,22 @@ const CustomerList = () => {
           </div>
         </div>
       </Modal>
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, email: '' })}
+        onConfirm={() => deleteCustomer(deleteModal.id, deleteModal.email)}
+        title="Delete Customer"
+        message={`Are you absolutely sure you want to delete "${deleteModal.email}"? All their data will be permanently removed.`}
+      />
+
+      <DeleteModal
+        isOpen={statusModal.open}
+        onClose={() => setStatusModal({ open: false, id: null, email: '', currentStatus: '' })}
+        onConfirm={() => toggleStatus(statusModal.id, statusModal.currentStatus, statusModal.email)}
+        title={statusModal.currentStatus === 'active' ? 'Block Customer Account' : 'Activate Customer Account'}
+        message={`Are you sure you want to ${statusModal.currentStatus === 'active' ? 'block' : 'activate'} the account for "${statusModal.email}"?`}
+      />
     </div>
   );
 };

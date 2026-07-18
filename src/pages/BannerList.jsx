@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-rea
 import axios from 'axios';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,6 +26,7 @@ const BannerList = () => {
   const [status, setStatus] = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, title: '' });
 
   const { showNotification } = useNotification();
   const { admin } = useAuth();
@@ -122,8 +124,6 @@ const BannerList = () => {
   };
 
   const handleDelete = async (id, titleStr) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete banner "${titleStr || 'Untitled'}"?`)) return;
-
     try {
       const res = await axios.delete(`/api/banners/${id}`);
       if (res.data.success) {
@@ -132,6 +132,8 @@ const BannerList = () => {
       }
     } catch (err) {
       showNotification('Failed to delete banner.', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null, title: '' });
     }
   };
 
@@ -208,7 +210,7 @@ const BannerList = () => {
           </button>
           {['superadmin', 'manager'].includes(admin?.role) && (
             <button
-              onClick={() => handleDelete(row.id, row.title)}
+              onClick={() => setDeleteModal({ open: true, id: row.id, title: row.title })}
               className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450"
             >
               <Trash2 className="w-4 h-4" />
@@ -416,6 +418,14 @@ const BannerList = () => {
           </button>
         </form>
       </Modal>
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, title: '' })}
+        onConfirm={() => handleDelete(deleteModal.id, deleteModal.title)}
+        title="Delete Banner"
+        message={`Are you sure you want to delete "${deleteModal.title || 'this banner'}"? This action cannot be undone.`}
+      />
     </div>
   );
 };

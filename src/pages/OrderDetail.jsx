@@ -4,6 +4,7 @@ import { ArrowLeft, Printer, Truck, FileText, User, ShoppingBag, CreditCard, Che
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
+import DeleteModal from '../components/DeleteModal';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -27,6 +28,7 @@ const OrderDetail = () => {
   const [pickupDate, setPickupDate] = useState('');         // For schedule pickup
   const [tracking, setTracking] = useState(null);          // Live tracking data
   const [showTracking, setShowTracking] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ open: false, type: null }); // type: 'order' | 'cancel'
 
   const { showNotification } = useNotification();
 
@@ -180,7 +182,11 @@ const OrderDetail = () => {
   });
 
   const cancelSrOrder = () => {
-    if (!window.confirm('Cancel this shipment on Shiprocket? This cannot be undone.')) return;
+    setDeleteModal({ open: true, type: 'cancel' });
+  };
+
+  const confirmCancelSrOrder = () => {
+    setDeleteModal({ open: false, type: null });
     handleSrAction('cancel', async () => {
       try {
         const res = await axios.post(`/api/shipping/orders/${id}/cancel`);
@@ -193,7 +199,6 @@ const OrderDetail = () => {
   };
 
   const handleDeleteOrder = async () => {
-    if (!window.confirm('Are you sure you want to permanently delete this order?')) return;
     try {
       const res = await axios.delete(`/api/orders/${id}`);
       if (res.data.success) {
@@ -202,6 +207,8 @@ const OrderDetail = () => {
       }
     } catch (err) {
       showNotification('Failed to delete order', 'error');
+    } finally {
+      setDeleteModal({ open: false, type: null });
     }
   };
 
@@ -267,8 +274,8 @@ const OrderDetail = () => {
 
         <div className="flex gap-2">
           <button
-            onClick={handleDeleteOrder}
-            className="btn-danger py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center gap-2"
+            onClick={() => setDeleteModal({ open: true, type: 'order' })}
+            className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg shadow-rose-500/20 flex items-center gap-2 transition-colors"
           >
             <Trash2 className="w-4.5 h-4.5" />
             Delete Order
@@ -789,6 +796,22 @@ const OrderDetail = () => {
 
         </div>
       </div>
+
+      <DeleteModal
+        isOpen={deleteModal.open && deleteModal.type === 'order'}
+        onClose={() => setDeleteModal({ open: false, type: null })}
+        onConfirm={handleDeleteOrder}
+        title="Delete Order"
+        message="Are you sure you want to permanently delete this order? This action cannot be undone."
+      />
+
+      <DeleteModal
+        isOpen={deleteModal.open && deleteModal.type === 'cancel'}
+        onClose={() => setDeleteModal({ open: false, type: null })}
+        onConfirm={confirmCancelSrOrder}
+        title="Cancel Shiprocket Shipment"
+        message="Are you sure you want to cancel this shipment on Shiprocket? This action cannot be undone and the AWB will be released."
+      />
     </div>
   );
 };

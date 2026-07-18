@@ -4,11 +4,13 @@ import { Plus, Edit, Trash2, Search, BookOpen, AlertCircle } from 'lucide-react'
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import Table from '../components/Table';
+import DeleteModal from '../components/DeleteModal';
 
 const BlogList = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null });
   const { showNotification } = useNotification();
 
   const fetchBlogs = async () => {
@@ -27,14 +29,14 @@ const BlogList = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this article?')) {
-      try {
-        await axios.delete(`/api/blogs/${id}`);
-        showNotification('Article deleted successfully', 'success');
-        fetchBlogs();
-      } catch (err) {
-        showNotification(err.response?.data?.error || 'Failed to delete article', 'error');
-      }
+    try {
+      await axios.delete(`/api/blogs/${id}`);
+      showNotification('Article deleted successfully', 'success');
+      fetchBlogs();
+    } catch (err) {
+      showNotification(err.response?.data?.error || 'Failed to delete article', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -108,7 +110,7 @@ const BlogList = () => {
           <Link to={`/style-journal/edit/${row.id}`} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
             <Edit className="w-4 h-4" />
           </Link>
-          <button onClick={() => handleDelete(row.id)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+          <button onClick={() => setDeleteModal({ open: true, id: row.id })} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -166,6 +168,14 @@ const BlogList = () => {
           <Table columns={columns} data={filteredBlogs} />
         )}
       </div>
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={() => handleDelete(deleteModal.id)}
+        title="Delete Article"
+        message="Are you sure you want to delete this article? This action cannot be undone."
+      />
     </div>
   );
 };

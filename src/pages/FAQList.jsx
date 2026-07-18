@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import DeleteModal from '../components/DeleteModal';
 
 const EMPTY_FORM = { question: '', answer: '', order: 0, isActive: true };
 
@@ -152,6 +153,7 @@ export default function FAQList() {
   const [modalFaq, setModalFaq] = useState(null); // null = closed, {} = new, {faq} = edit
   const [modalOpen, setModalOpen] = useState(false);
   const { showNotification } = useNotification();
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null });
 
   const fetchFAQs = async () => {
     setLoading(true);
@@ -183,13 +185,14 @@ export default function FAQList() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this FAQ? This cannot be undone.')) return;
     try {
       await api.delete(`/api/faqs/${id}`);
       showNotification('FAQ deleted', 'success');
       fetchFAQs();
     } catch {
       showNotification('Failed to delete FAQ', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -297,7 +300,7 @@ export default function FAQList() {
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDelete(faq._id)}
+                  onClick={() => setDeleteModal({ open: true, id: faq._id })}
                   className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450 transition-colors"
                   title="Delete FAQ"
                 >
@@ -308,6 +311,14 @@ export default function FAQList() {
           ))}
         </div>
       )}
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={() => handleDelete(deleteModal.id)}
+        title="Delete FAQ"
+        message="Are you sure you want to delete this FAQ? It will be removed from the website immediately."
+      />
     </div>
   );
 }

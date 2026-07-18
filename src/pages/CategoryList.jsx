@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Folder, Image, ShieldAlert } from 'lucide-react';
 import axios from 'axios';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,6 +36,8 @@ const CategoryList = () => {
 
   const { showNotification } = useNotification();
   const { admin } = useAuth();
+  const [catDeleteModal, setCatDeleteModal] = useState({ open: false, id: null, name: '' });
+  const [brandDeleteModal, setBrandDeleteModal] = useState({ open: false, id: null, name: '' });
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -133,8 +136,6 @@ const CategoryList = () => {
   };
 
   const handleCatDelete = async (id, name) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete category "${name}"? It cascades!`)) return;
-
     try {
       const res = await axios.delete(`/api/categories/${id}`);
       if (res.data.success) {
@@ -144,6 +145,8 @@ const CategoryList = () => {
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to delete category.';
       showNotification(msg, 'error');
+    } finally {
+      setCatDeleteModal({ open: false, id: null, name: '' });
     }
   };
 
@@ -202,8 +205,6 @@ const CategoryList = () => {
   };
 
   const handleBrandDelete = async (id, name) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete brand "${name}"?`)) return;
-
     try {
       const res = await axios.delete(`/api/categories/brands/${id}`);
       if (res.data.success) {
@@ -213,6 +214,8 @@ const CategoryList = () => {
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to delete brand.';
       showNotification(msg, 'error');
+    } finally {
+      setBrandDeleteModal({ open: false, id: null, name: '' });
     }
   };
 
@@ -263,7 +266,7 @@ const CategoryList = () => {
             </button>
             {['superadmin', 'manager'].includes(admin?.role) && (
               <button
-                onClick={() => handleCatDelete(cat.id, cat.name)}
+                onClick={() => setCatDeleteModal({ open: true, id: cat.id, name: cat.name })}
                 className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -363,7 +366,7 @@ const CategoryList = () => {
                     </button>
                     {['superadmin', 'manager'].includes(admin?.role) && (
                       <button
-                        onClick={() => handleBrandDelete(b.id, b.name)}
+                        onClick={() => setBrandDeleteModal({ open: true, id: b.id, name: b.name })}
                         className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -566,6 +569,22 @@ const CategoryList = () => {
           </button>
         </form>
       </Modal>
+
+      <DeleteModal
+        isOpen={catDeleteModal.open}
+        onClose={() => setCatDeleteModal({ open: false, id: null, name: '' })}
+        onConfirm={() => handleCatDelete(catDeleteModal.id, catDeleteModal.name)}
+        title="Delete Category"
+        message={`Are you sure you want to delete "${catDeleteModal.name}"? This will also delete all subcategories and may affect associated products.`}
+      />
+
+      <DeleteModal
+        isOpen={brandDeleteModal.open}
+        onClose={() => setBrandDeleteModal({ open: false, id: null, name: '' })}
+        onConfirm={() => handleBrandDelete(brandDeleteModal.id, brandDeleteModal.name)}
+        title="Delete Brand"
+        message={`Are you sure you want to delete brand "${brandDeleteModal.name}"? This action cannot be undone.`}
+      />
     </div>
   );
 };

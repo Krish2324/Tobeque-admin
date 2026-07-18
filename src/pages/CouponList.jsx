@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Ticket, Check, X } from 'lucide-react';
 import axios from 'axios';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -27,6 +28,7 @@ const CouponList = () => {
 
   const { showNotification } = useNotification();
   const { admin } = useAuth();
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, code: '' });
 
   const fetchCoupons = async () => {
     setLoading(true);
@@ -119,8 +121,6 @@ const CouponList = () => {
   };
 
   const handleDelete = async (id, codeStr) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete coupon "${codeStr}"?`)) return;
-
     try {
       const res = await axios.delete(`/api/coupons/${id}`);
       if (res.data.success) {
@@ -129,6 +129,8 @@ const CouponList = () => {
       }
     } catch (err) {
       showNotification(err.response?.data?.error || 'Failed to delete coupon.', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null, code: '' });
     }
   };
 
@@ -200,7 +202,7 @@ const CouponList = () => {
           </button>
           {['superadmin', 'manager'].includes(admin?.role) && (
             <button
-              onClick={() => handleDelete(row.id, row.code)}
+              onClick={() => setDeleteModal({ open: true, id: row.id, code: row.code })}
               className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450"
             >
               <Trash2 className="w-4 h-4" />
@@ -353,6 +355,14 @@ const CouponList = () => {
           </button>
         </form>
       </Modal>
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, code: '' })}
+        onConfirm={() => handleDelete(deleteModal.id, deleteModal.code)}
+        title="Delete Coupon"
+        message={`Are you sure you want to delete coupon "${deleteModal.code}"? This action cannot be undone.`}
+      />
     </div>
   );
 };

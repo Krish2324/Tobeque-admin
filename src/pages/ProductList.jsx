@@ -6,6 +6,7 @@ import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import DeleteModal from '../components/DeleteModal';
 
 const ProductList = () => {
   const { currencySymbol } = useCurrency();
@@ -29,6 +30,7 @@ const ProductList = () => {
   const { showNotification } = useNotification();
   const { admin } = useAuth();
   const navigate = useNavigate();
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: '' });
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -80,8 +82,6 @@ const ProductList = () => {
   }, []);
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you absolutely sure you want to delete "${name}"? This cascades to images!`)) return;
-
     try {
       const res = await axios.delete(`/api/products/${id}`);
       if (res.data.success) {
@@ -91,6 +91,8 @@ const ProductList = () => {
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to delete product.';
       showNotification(msg, 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null, name: '' });
     }
   };
 
@@ -195,7 +197,7 @@ const ProductList = () => {
           </Link>
           {['superadmin', 'manager'].includes(admin?.role) && (
             <button
-              onClick={() => handleDelete(row.id, row.name)}
+              onClick={() => setDeleteModal({ open: true, id: row.id, name: row.name })}
               className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
@@ -303,6 +305,14 @@ const ProductList = () => {
           exportFileName="products-catalog"
         />
       </div>
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, name: '' })}
+        onConfirm={() => handleDelete(deleteModal.id, deleteModal.name)}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${deleteModal.name}"? This will also remove all associated images and data.`}
+      />
     </div>
   );
 };

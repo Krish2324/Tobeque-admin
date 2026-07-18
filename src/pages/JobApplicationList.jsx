@@ -3,6 +3,7 @@ import { Trash2, Download, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
+import DeleteModal from '../components/DeleteModal';
 
 const STATUS_STYLES = {
   pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -18,6 +19,7 @@ export default function JobApplicationList() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const { showNotification } = useNotification();
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null });
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -47,13 +49,14 @@ export default function JobApplicationList() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this application? This cannot be undone.')) return;
     try {
       await api.delete(`/api/job-applications/${id}`);
       showNotification('Application deleted', 'success');
       fetchApplications();
     } catch {
       showNotification('Failed to delete application', 'error');
+    } finally {
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -146,7 +149,7 @@ export default function JobApplicationList() {
       header: 'Actions',
       accessor: (row) => (
         <button
-          onClick={() => handleDelete(row._id)}
+          onClick={() => setDeleteModal({ open: true, id: row._id })}
           className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 dark:text-rose-450 transition-colors"
           title="Delete Application"
         >
@@ -208,6 +211,14 @@ export default function JobApplicationList() {
         data={applications}
         loading={loading}
         emptyMessage="No applications found."
+      />
+
+      <DeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={() => handleDelete(deleteModal.id)}
+        title="Delete Application"
+        message="Are you sure you want to delete this job application? This action cannot be undone."
       />
     </div>
   );
