@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save, Plus, X } from 'lucide-react';
+import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save, Plus, X, Truck, Info } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,11 @@ const Settings = () => {
   const [stripePublishableKey, setStripePublishableKey] = useState('');
   const [stripeSecretKey, setStripeSecretKey] = useState('');
 
+  // Shipping & COD State
+  const [shippingFallbackRate, setShippingFallbackRate] = useState('80');
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState('999');
+  const [codFee, setCodFee] = useState('0');
+
   // Profile update state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -55,6 +60,9 @@ const Settings = () => {
         setSmtpPass(settings.smtpPassword || '');
         setStripePublishableKey(settings.stripePublishableKey || '');
         setStripeSecretKey(settings.stripeSecretKey || '');
+        setShippingFallbackRate(settings.shippingFallbackRate || '80');
+        setFreeShippingThreshold(settings.freeShippingThreshold || '999');
+        setCodFee(settings.codFee || '0');
       }
 
       if (admin) {
@@ -102,7 +110,10 @@ const Settings = () => {
           smtpUser,
           smtpPassword: smtpPass,
           stripePublishableKey,
-          stripeSecretKey
+          stripeSecretKey,
+          shippingFallbackRate,
+          freeShippingThreshold,
+          codFee
         };
 
         const res = await axios.post('/api/settings', payload);
@@ -172,6 +183,17 @@ const Settings = () => {
             General Branding
           </button>
           <button
+            onClick={() => setActiveTab('shipping')}
+            className={`w-full text-left text-xs font-semibold px-4 py-3 rounded-xl flex items-center gap-2.5 transition-all ${
+              activeTab === 'shipping'
+                ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
+                : 'text-slate-650 hover:bg-slate-50 dark:text-slate-350 dark:hover:bg-slate-850'
+            }`}
+          >
+            <Truck className="w-4.5 h-4.5" />
+            Shipping & COD
+          </button>
+          <button
             onClick={() => setActiveTab('smtp')}
             className={`w-full text-left text-xs font-semibold px-4 py-3 rounded-xl flex items-center gap-2.5 transition-all ${
               activeTab === 'smtp'
@@ -180,7 +202,7 @@ const Settings = () => {
             }`}
           >
             <Mail className="w-4.5 h-4.5" />
-            SMTP SMTP dispatch
+            SMTP Dispatch
           </button>
           <button
             onClick={() => setActiveTab('stripe')}
@@ -191,7 +213,7 @@ const Settings = () => {
             }`}
           >
             <CreditCard className="w-4.5 h-4.5" />
-            Stripe Stripe Integration
+            Stripe Integration
           </button>
           <button
             onClick={() => setActiveTab('profile')}
@@ -202,7 +224,7 @@ const Settings = () => {
             }`}
           >
             <Shield className="w-4.5 h-4.5" />
-            Admin Profile Password
+            Admin Profile
           </button>
         </div>
 
@@ -210,6 +232,98 @@ const Settings = () => {
         <div className="lg:col-span-3 glass-card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             
+            {activeTab === 'shipping' && (
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-850">
+                  🚚 Shipping & Payment Fee Rules
+                </h3>
+
+                {/* Info Banner */}
+                <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl">
+                  <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                    The checkout page uses <strong>live Shiprocket rates</strong> based on the customer's pincode. If Shiprocket is unavailable or the pincode is not serviceable, the <strong>Fallback Rate</strong> is used automatically so customers can always checkout.
+                  </p>
+                </div>
+
+                {/* Shipping Rate Settings */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Shipping Charges</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label text-xs">Fallback Shipping Rate (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="e.g. 80"
+                        value={shippingFallbackRate}
+                        onChange={(e) => setShippingFallbackRate(e.target.value)}
+                        className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">Used when Shiprocket cannot calculate a rate for the customer's pincode.</span>
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Free Shipping Threshold (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="e.g. 999"
+                        value={freeShippingThreshold}
+                        onChange={(e) => setFreeShippingThreshold(e.target.value)}
+                        className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">Orders above this amount get free shipping. Set to 0 to disable free shipping.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* COD Fee */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Cash on Delivery (COD) Fee</h4>
+                  <div className="max-w-xs">
+                    <label className="form-label text-xs">COD Extra Fee (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 40"
+                      value={codFee}
+                      onChange={(e) => setCodFee(e.target.value)}
+                      className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">Extra fee added on top of the shipping cost when the customer selects Cash on Delivery. Set to 0 to disable.</span>
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-3 uppercase tracking-wider">Preview (Example ₹600 order)</p>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Subtotal</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">₹600.00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Shipping (live Shiprocket rate)</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">~₹45–₹120 (varies by pincode)</span>
+                    </div>
+                    <div className="flex justify-between text-amber-600">
+                      <span>COD Fee (if COD selected)</span>
+                      <span className="font-semibold">+ ₹{codFee || 0}</span>
+                    </div>
+                    {parseFloat(freeShippingThreshold) > 0 && (
+                      <div className="flex justify-between text-emerald-600 pt-1 border-t border-slate-200 dark:border-slate-700">
+                        <span>Free shipping unlocks at</span>
+                        <span className="font-bold">₹{freeShippingThreshold}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'general' && (
               <div className="space-y-5">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-850">
