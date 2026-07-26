@@ -29,6 +29,7 @@ import JobPostingForm from '../pages/JobPostingForm';
 import CommunityStyleList from '../pages/CommunityStyleList';
 import CommunityStyleForm from '../pages/CommunityStyleForm';
 import AboutUsSettings from '../pages/AboutUsSettings';
+import ContactUsAdmin from '../pages/ContactUsAdmin';
 
 const AppRoutes = () => {
   return (
@@ -101,6 +102,9 @@ const AppRoutes = () => {
 
         {/* About Us (CMS) */}
         <Route path="about-us" element={<AboutUsSettings />} />
+
+        {/* Contact Us (CMS + Submissions) */}
+        <Route path="contact-us" element={<ContactUsAdmin />} />
 
         {/* Job Postings (CMS) */}
         <Route path="job-postings" element={<JobPostingList />} />

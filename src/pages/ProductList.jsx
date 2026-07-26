@@ -102,19 +102,30 @@ const ProductList = () => {
       header: 'Item',
       accessor: 'name',
       sortable: true,
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={row.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
-            alt={row.name}
-            className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
-          />
-          <div className="flex flex-col">
-            <span className="font-semibold text-slate-850 dark:text-white line-clamp-1">{row.name}</span>
-            <span className="text-[10px] text-slate-450 dark:text-slate-450 uppercase font-bold tracking-wider">{row.sku}</span>
+      cell: (row) => {
+        const isVideoUrl = row.thumbnail && !!row.thumbnail.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+        return (
+          <div className="flex items-center gap-3">
+            {isVideoUrl ? (
+              <video
+                src={row.thumbnail}
+                className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+                autoPlay loop muted playsInline
+              />
+            ) : (
+              <img
+                src={row.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
+                alt={row.name}
+                className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+              />
+            )}
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-850 dark:text-white line-clamp-1">{row.name}</span>
+              <span className="text-[10px] text-slate-450 dark:text-slate-450 uppercase font-bold tracking-wider">{row.sku}</span>
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       header: 'Category',

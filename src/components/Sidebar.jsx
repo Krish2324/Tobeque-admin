@@ -42,6 +42,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'Categories', path: '/categories', icon: List, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Style Journal', path: '/style-journal', icon: PenTool, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'About Us', path: '/about-us', icon: Users, roles: ['superadmin', 'manager'] },
+        { name: 'Contact Us', path: '/contact-us', icon: MessageSquare, roles: ['superadmin', 'manager'] },
         { name: 'Steal The Style', path: '/community-styles', icon: Camera, roles: ['superadmin', 'manager'] },
       ]
     },

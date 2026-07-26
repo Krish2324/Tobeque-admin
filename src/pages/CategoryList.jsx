@@ -24,6 +24,7 @@ const CategoryList = () => {
   const [catBannerFile, setCatBannerFile] = useState(null);
   const [catSeoTitle, setCatSeoTitle] = useState('');
   const [catSeoDesc, setCatSeoDesc] = useState('');
+  const [catDescriptionSections, setCatDescriptionSections] = useState([{ title: '', content: '' }]);
   const [catSaving, setCatSaving] = useState(false);
 
   // Brand Form Modals
@@ -72,6 +73,7 @@ const CategoryList = () => {
       setCatGoogleProductCategory(cat.googleProductCategory || '');
       setCatSeoTitle(cat.seoTitle || '');
       setCatSeoDesc(cat.seoDescription || '');
+      setCatDescriptionSections(cat.descriptionSections && cat.descriptionSections.length > 0 ? cat.descriptionSections : [{ title: '', content: '' }]);
     } else {
       setEditingCategory(null);
       setCatName('');
@@ -82,10 +84,23 @@ const CategoryList = () => {
       setCatGoogleProductCategory('');
       setCatSeoTitle('');
       setCatSeoDesc('');
+      setCatDescriptionSections([{ title: '', content: '' }]);
     }
     setCatImageFile(null);
     setCatBannerFile(null);
     setCatModalOpen(true);
+  };
+
+  const handleAddDescriptionSection = () => {
+    setCatDescriptionSections(prev => [...prev, { title: '', content: '' }]);
+  };
+
+  const handleRemoveDescriptionSection = (index) => {
+    setCatDescriptionSections(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDescriptionSectionChange = (index, field, value) => {
+    setCatDescriptionSections(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
   // Category Submit
@@ -107,6 +122,7 @@ const CategoryList = () => {
       formData.append('googleProductCategory', catGoogleProductCategory);
       formData.append('seoTitle', catSeoTitle);
       formData.append('seoDescription', catSeoDesc);
+      formData.append('descriptionSections', JSON.stringify(catDescriptionSections.filter(s => s.title.trim() || s.content.trim())));
 
       if (catImageFile) formData.append('image', catImageFile);
       if (catBannerFile) formData.append('banner', catBannerFile);
@@ -442,14 +458,64 @@ const CategoryList = () => {
           </div>
 
           <div>
-            <label className="form-label text-xs">Description details</label>
+            <label className="form-label text-xs">Description details (Main overview)</label>
             <textarea
-              rows={3}
-              placeholder="Short description..."
+              rows={2}
+              placeholder="Short category summary overview..."
               value={catDescription}
               onChange={(e) => setCatDescription(e.target.value)}
               className="form-input text-xs resize-none"
             />
+          </div>
+
+          {/* Dynamic Footer / Category Page Description Sections */}
+          <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <label className="form-label text-xs mb-0 text-brand-650 dark:text-brand-400 font-bold uppercase tracking-wider">
+                Category Page Footer Description Sections
+              </label>
+              <button
+                type="button"
+                onClick={handleAddDescriptionSection}
+                className="px-2.5 py-1 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Description Section
+              </button>
+            </div>
+            <span className="text-[10px] text-slate-400 block">These description sections will be displayed right above the footer on the category page.</span>
+
+            {catDescriptionSections.map((sec, idx) => (
+              <div key={idx} className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2 relative">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Section {idx + 1}</span>
+                  {catDescriptionSections.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDescriptionSection(idx)}
+                      className="text-rose-500 hover:text-rose-700 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder={`Section ${idx + 1} Title (e.g. Fit & Fabric Guide, Care Instructions)`}
+                  value={sec.title}
+                  onChange={(e) => handleDescriptionSectionChange(idx, 'title', e.target.value)}
+                  className="form-input text-xs"
+                />
+                <textarea
+                  rows={3}
+                  placeholder={`Section ${idx + 1} Detailed description content...`}
+                  value={sec.content}
+                  onChange={(e) => handleDescriptionSectionChange(idx, 'content', e.target.value)}
+                  className="form-input text-xs resize-none"
+                />
+              </div>
+            ))}
           </div>
 
           <div>

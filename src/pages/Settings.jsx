@@ -164,7 +164,7 @@ const Settings = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">System Settings</h1>
-        <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">Configure SMTP email templates dispatches, Stripe integration keys, and update profile passwords</p>
+        <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">Configure SMTP email templates dispatches, shipping fallback rates, and update profile passwords</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -204,17 +204,7 @@ const Settings = () => {
             <Mail className="w-4.5 h-4.5" />
             SMTP Dispatch
           </button>
-          <button
-            onClick={() => setActiveTab('stripe')}
-            className={`w-full text-left text-xs font-semibold px-4 py-3 rounded-xl flex items-center gap-2.5 transition-all ${
-              activeTab === 'stripe'
-                ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
-                : 'text-slate-650 hover:bg-slate-50 dark:text-slate-350 dark:hover:bg-slate-850'
-            }`}
-          >
-            <CreditCard className="w-4.5 h-4.5" />
-            Stripe Integration
-          </button>
+
           <button
             onClick={() => setActiveTab('profile')}
             className={`w-full text-left text-xs font-semibold px-4 py-3 rounded-xl flex items-center gap-2.5 transition-all ${
@@ -472,33 +462,7 @@ const Settings = () => {
               </div>
             )}
 
-            {activeTab === 'stripe' && (
-              <div className="space-y-5">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-850">
-                  Stripe Payment gateway integrations
-                </h3>
-                <div>
-                  <label className="form-label text-xs">Stripe Publishable Key (pk_test...)</label>
-                  <input
-                    type="text"
-                    placeholder="pk_test_..."
-                    value={stripePublishableKey}
-                    onChange={(e) => setStripePublishableKey(e.target.value)}
-                    className="form-input text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="form-label text-xs">Stripe Secret Key (sk_test...)</label>
-                  <input
-                    type="password"
-                    placeholder="sk_test_..."
-                    value={stripeSecretKey}
-                    onChange={(e) => setStripeSecretKey(e.target.value)}
-                    className="form-input text-xs font-mono"
-                  />
-                </div>
-              </div>
-            )}
+
 
             {activeTab === 'profile' && (
               <div className="space-y-5">
@@ -511,7 +475,7 @@ const Settings = () => {
                     <input
                       type="text"
                       required
-                      placeholder="Rushabh"
+                      placeholder="Enter first name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="form-input text-xs"
@@ -522,7 +486,7 @@ const Settings = () => {
                     <input
                       type="text"
                       required
-                      placeholder="Desai"
+                      placeholder="Enter last name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="form-input text-xs"

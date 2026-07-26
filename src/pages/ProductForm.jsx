@@ -42,6 +42,9 @@ const ProductForm = () => {
   const [brandId, setBrandId] = useState('');
   const [isOnSaleSection, setIsOnSaleSection] = useState(false);
   const [isHotRightNow, setIsHotRightNow] = useState(false);
+  const [show7DayReturn, setShow7DayReturn] = useState(true);
+  const [showFreeShipping, setShowFreeShipping] = useState(true);
+  const [showCodAvailable, setShowCodAvailable] = useState(true);
   const [styleItWith, setStyleItWith] = useState([]); // array of product IDs
   const [allProducts, setAllProducts] = useState([]);
   const [styleSearchQuery, setStyleSearchQuery] = useState('');
@@ -57,8 +60,11 @@ const ProductForm = () => {
   const [existingImageColors, setExistingImageColors] = useState({}); // { [imageId]: colorString }
 
   // SEO Fields
+  const [slug, setSlug] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
+  const [seoSchema, setSeoSchema] = useState('');
 
   // Settings Tab Navigation State
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
@@ -136,10 +142,13 @@ const ProductForm = () => {
         setDimensions(prod.dimensions || '');
         setStatus(prod.status);
         setIsFeatured(prod.isFeatured);
-        setCategoryId(prod.categoryId || '');
-        setBrandId(prod.brandId || '');
+        setCategoryId(prod.category ? (typeof prod.category === 'object' ? (prod.category.id || prod.category._id) : prod.category) : (prod.categoryId || ''));
+        setBrandId(prod.brand ? (typeof prod.brand === 'object' ? (prod.brand.id || prod.brand._id) : prod.brand) : (prod.brandId || ''));
         setIsOnSaleSection(prod.isOnSaleSection || false);
         setIsHotRightNow(prod.isHotRightNow || false);
+        setShow7DayReturn(prod.show7DayReturn !== undefined ? prod.show7DayReturn : true);
+        setShowFreeShipping(prod.showFreeShipping !== undefined ? prod.showFreeShipping : true);
+        setShowCodAvailable(prod.showCodAvailable !== undefined ? prod.showCodAvailable : true);
         setHotRightNowMediaPreview(prod.hotRightNowMedia || '');
         setThumbnailPreview(prod.thumbnail || '');
         setExistingImages(prod.images || []);
@@ -147,8 +156,11 @@ const ProductForm = () => {
         const colorMap = {};
         (prod.images || []).forEach(img => { colorMap[img.id] = img.color || ''; });
         setExistingImageColors(colorMap);
+        setSlug(prod.slug || '');
         setSeoTitle(prod.seoTitle || '');
         setSeoDescription(prod.seoDescription || '');
+        setSeoKeywords(prod.seoKeywords || '');
+        setSeoSchema(prod.seoSchema || '');
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? p.id || p._id : p) : []);
 
         setCountdownEvergreen(prod.countdownEvergreen || false);
@@ -342,10 +354,16 @@ const ProductForm = () => {
       formData.append('isFeatured', isFeatured);
       formData.append('isOnSaleSection', isOnSaleSection);
       formData.append('isHotRightNow', isHotRightNow);
+      formData.append('show7DayReturn', show7DayReturn);
+      formData.append('showFreeShipping', showFreeShipping);
+      formData.append('showCodAvailable', showCodAvailable);
       formData.append('categoryId', categoryId);
       formData.append('brandId', brandId);
+      formData.append('slug', slug);
       formData.append('seoTitle', seoTitle);
       formData.append('seoDescription', seoDescription);
+      formData.append('seoKeywords', seoKeywords);
+      formData.append('seoSchema', seoSchema);
       formData.append('countdownEvergreen', countdownEvergreen);
       formData.append('restartCountdownAfter', restartCountdownAfter);
       formData.append('countdownTimerProfile', countdownTimerProfile);
@@ -1168,9 +1186,10 @@ const ProductForm = () => {
                 className="form-input h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
               >
                 <option value="">Select placement category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
+                {categories.map((cat) => {
+                  const catVal = cat.id || cat._id;
+                  return <option key={catVal} value={catVal}>{cat.name}</option>;
+                })}
               </select>
             </div>
 
@@ -1182,9 +1201,10 @@ const ProductForm = () => {
                 className="form-input h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
               >
                 <option value="">Select brand manufacturer</option>
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
+                {brands.map((b) => {
+                  const bVal = b.id || b._id;
+                  return <option key={bVal} value={bVal}>{b.name}</option>;
+                })}
               </select>
             </div>
 
@@ -1271,6 +1291,47 @@ const ProductForm = () => {
                 </div>
               </div>
             )}
+
+            {/* Product Guarantee Badges */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <label className="form-label text-xs font-bold text-slate-800 dark:text-white">Product Guarantee Badges</label>
+              <div className="flex items-center gap-3 py-1">
+                <input
+                  type="checkbox"
+                  id="show7DayReturn"
+                  checked={show7DayReturn}
+                  onChange={(e) => setShow7DayReturn(e.target.checked)}
+                  className="w-4 h-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
+                />
+                <label htmlFor="show7DayReturn" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Show 7 Day Return ("No Questions Asked")
+                </label>
+              </div>
+              <div className="flex items-center gap-3 py-1">
+                <input
+                  type="checkbox"
+                  id="showFreeShipping"
+                  checked={showFreeShipping}
+                  onChange={(e) => setShowFreeShipping(e.target.checked)}
+                  className="w-4 h-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
+                />
+                <label htmlFor="showFreeShipping" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Show Free Shipping ("on pre-paid orders")
+                </label>
+              </div>
+              <div className="flex items-center gap-3 py-1">
+                <input
+                  type="checkbox"
+                  id="showCodAvailable"
+                  checked={showCodAvailable}
+                  onChange={(e) => setShowCodAvailable(e.target.checked)}
+                  className="w-4 h-4 text-brand-600 border-slate-300 rounded focus:ring-brand-500"
+                />
+                <label htmlFor="showCodAvailable" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Show COD Available ("On All Orders")
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Media Images upload */}
@@ -1470,7 +1531,28 @@ const ProductForm = () => {
             </div>
 
             <div>
-              <label className="form-label text-xs">Meta title tag</label>
+              <label className="form-label text-xs">Product Slug / URL Handle</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. over-sized-tshirt-blue"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className="form-input text-xs flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSlug(name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-'))}
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+                >
+                  Generate
+                </button>
+              </div>
+              <span className="text-[10px] text-slate-400 mt-1 block">Custom URL path segment for this product.</span>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Meta Title Tag</label>
               <input
                 type="text"
                 placeholder="Google Search title headline"
@@ -1481,7 +1563,7 @@ const ProductForm = () => {
             </div>
 
             <div>
-              <label className="form-label text-xs">Meta description tag</label>
+              <label className="form-label text-xs">Meta Description Tag</label>
               <textarea
                 rows={3}
                 placeholder="Google search descriptive snippet"
@@ -1489,6 +1571,30 @@ const ProductForm = () => {
                 onChange={(e) => setSeoDescription(e.target.value)}
                 className="form-input text-xs resize-none"
               />
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Meta Keywords</label>
+              <input
+                type="text"
+                placeholder="e.g. fashion, oversized, cotton tshirt, navy blue"
+                value={seoKeywords}
+                onChange={(e) => setSeoKeywords(e.target.value)}
+                className="form-input text-xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Comma separated list of search keywords.</span>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Schema Markup (JSON-LD Structured Data)</label>
+              <textarea
+                rows={4}
+                placeholder='{"@context": "https://schema.org/", "@type": "Product", "name": "..."}'
+                value={seoSchema}
+                onChange={(e) => setSeoSchema(e.target.value)}
+                className="form-input text-xs font-mono resize-none"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Custom JSON-LD script content inserted directly into HTML &lt;head&gt;.</span>
             </div>
           </div>
 

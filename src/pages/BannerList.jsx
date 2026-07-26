@@ -21,6 +21,7 @@ const BannerList = () => {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [bannerLink, setBannerLink] = useState('');
   const [position, setPosition] = useState('home_slider');
   const [sortOrder, setSortOrder] = useState('0');
   const [status, setStatus] = useState(true);
@@ -64,6 +65,7 @@ const BannerList = () => {
       setTitle(banner.title || '');
       setSubtitle(banner.subtitle || '');
       setLinkUrl(banner.linkUrl || '');
+      setBannerLink(banner.bannerLink || '');
       setPosition(banner.position);
       setSortOrder(banner.sortOrder);
       setStatus(banner.status);
@@ -72,6 +74,7 @@ const BannerList = () => {
       setTitle('');
       setSubtitle('');
       setLinkUrl('');
+      setBannerLink('');
       setPosition('home_slider');
       setSortOrder('0');
       setStatus(true);
@@ -88,6 +91,7 @@ const BannerList = () => {
       formData.append('title', title);
       formData.append('subtitle', subtitle);
       formData.append('linkUrl', linkUrl);
+      formData.append('bannerLink', bannerLink);
       formData.append('position', position);
       formData.append('sortOrder', sortOrder);
       formData.append('status', status);
@@ -102,7 +106,8 @@ const BannerList = () => {
 
       let res;
       if (editingBanner) {
-        res = await axios.put(`/api/banners/${editingBanner.id}`, formData, {
+        const bannerId = editingBanner.id || editingBanner._id;
+        res = await axios.put(`/api/banners/${bannerId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
@@ -169,6 +174,20 @@ const BannerList = () => {
           <span className="text-[10px] text-slate-400 font-semibold">{row.subtitle || 'No sub-header'}</span>
         </div>
       )
+    },
+    {
+      header: 'Destination Link',
+      accessor: 'bannerLink',
+      cell: (row) => {
+        const link = row.bannerLink || row.linkUrl;
+        return link ? (
+          <span className="text-xs font-mono font-medium text-brand-600 dark:text-brand-400 bg-brand-500/10 px-2.5 py-1 rounded-lg max-w-[200px] truncate block">
+            {link}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400 font-semibold italic">No link</span>
+        );
+      }
     },
     {
       header: 'Slot Position',
@@ -363,15 +382,26 @@ const BannerList = () => {
               </select>
             </div>
             <div>
-              <label className="form-label text-xs">Link Destination URL</label>
+              <label className="form-label text-xs font-bold text-brand-600 dark:text-brand-400">Button Link (Shop Now URL)</label>
               <input
                 type="text"
-                placeholder="EX: /collections/winter-sale"
+                placeholder="EX: /collection or /products?category=western-wear"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 className="form-input text-xs"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="form-label text-xs font-bold text-indigo-600 dark:text-indigo-400">Banner Link (Clickable Banner URL)</label>
+            <input
+              type="text"
+              placeholder="EX: /collection or /products?category=party-wear"
+              value={bannerLink}
+              onChange={(e) => setBannerLink(e.target.value)}
+              className="form-input text-xs"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

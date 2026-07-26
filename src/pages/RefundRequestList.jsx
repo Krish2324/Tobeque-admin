@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Trash2, ExternalLink, Package, ShoppingBag, Eye, X } from 'lucide-react';
 import api from '../services/api';
 import Table from '../components/Table';
@@ -151,6 +152,16 @@ export default function RefundRequestList() {
             </span>
             {extraNote && (
               <p className="text-xs text-on-surface-variant truncate mt-0.5" title={extraNote}>{extraNote}</p>
+            )}
+            {row.proofImage && (
+              <a 
+                href={row.proofImage.startsWith('http') ? row.proofImage : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${row.proofImage}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 px-2 py-1 rounded-md"
+              >
+                <ExternalLink className="w-3 h-3" /> View Proof Image
+              </a>
             )}
           </div>
         );
@@ -334,14 +345,12 @@ export default function RefundRequestList() {
                   </div>
                   
                   <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <a 
-                      href={`/orders/${orderDetailsModal.order._id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <Link 
+                      to={`/orders/${orderDetailsModal.order._id || orderDetailsModal.order.id}`} 
                       className="btn-primary py-2 px-4 text-xs flex items-center gap-2"
                     >
                       View Full Order Page <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    </Link>
                   </div>
                 </div>
               ) : (

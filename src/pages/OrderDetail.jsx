@@ -29,6 +29,8 @@ const OrderDetail = () => {
   const [tracking, setTracking] = useState(null);          // Live tracking data
   const [showTracking, setShowTracking] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, type: null }); // type: 'order' | 'cancel'
+  const [confirmModal, setConfirmModal] = useState({ open: false, sendEmail: true });
+  const [confirming, setConfirming] = useState(false);
 
   const { showNotification } = useNotification();
 
@@ -95,6 +97,26 @@ const OrderDetail = () => {
       showNotification(msg, 'error');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Explicit Confirm Order Handler
+  const handleConfirmOrder = async () => {
+    setConfirming(true);
+    try {
+      const res = await axios.post(`/api/orders/${id}/confirm`, {
+        sendEmail: confirmModal.sendEmail
+      });
+      if (res.data.success) {
+        showNotification(res.data.message || 'Order confirmed and tax invoice emailed!', 'success');
+        setConfirmModal({ open: false, sendEmail: true });
+        fetchOrderDetails();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to confirm order.';
+      showNotification(msg, 'error');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -253,42 +275,128 @@ const OrderDetail = () => {
         }
       `}</style>
 
-      {/* Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/orders"
-            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-350 transition-colors"
-          >
-            <ArrowLeft className="w-4.5 h-4.5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">
-              Order Details: {order.orderNumber}
-            </h1>
-            <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-              Registered on: {new Date(order.createdAt).toLocaleString()}
-            </p>
-          </div>
-        </div>
+      {/* Status Helper */}
+      {(() => {
+        const getFulfillmentBadge = (st) => {
+          switch ((st || '').toLowerCase()) {
+            case 'confirmed':
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"><CheckCircle2 className="w-3.5 h-3.5" /> Confirmed</span>;
+            case 'processing':
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing</span>;
+            case 'shipped':
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"><Truck className="w-3.5 h-3.5" /> Shipped</span>;
+            case 'delivered':
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"><Package className="w-3.5 h-3.5" /> Delivered</span>;
+            case 'cancelled':
+            case 'returned':
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"><AlertCircle className="w-3.5 h-3.5" /> {st}</span>;
+            default:
+              return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"><Clock className="w-3.5 h-3.5" /> Pending Confirmation</span>;
+          }
+        };
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setDeleteModal({ open: true, type: 'order' })}
-            className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg shadow-rose-500/20 flex items-center gap-2 transition-colors"
-          >
-            <Trash2 className="w-4.5 h-4.5" />
-            Delete Order
-          </button>
-          <button
-            onClick={handlePrint}
-            className="btn-primary py-2.5 px-4 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2"
-          >
-            <Printer className="w-4.5 h-4.5" />
-            Print / Save Receipt
-          </button>
-        </div>
-      </div>
+        const getPaymentBadge = (st) => {
+          switch ((st || '').toLowerCase()) {
+            case 'paid':
+              return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Paid</span>;
+            case 'refunded':
+              return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">Refunded</span>;
+            default:
+              return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Pending</span>;
+          }
+        };
+
+        return (
+          <>
+            {/* Header Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/orders"
+                  className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-350 transition-colors"
+                >
+                  <ArrowLeft className="w-4.5 h-4.5" />
+                </Link>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">
+                      Order #{order.orderNumber}
+                    </h1>
+                    {getFulfillmentBadge(order.orderStatus)}
+                  </div>
+                  <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
+                    Registered on: {new Date(order.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setConfirmModal({ open: true, sendEmail: true })}
+                  className={`py-2.5 px-4 rounded-xl text-xs font-bold shadow-lg transition-all flex items-center gap-2 ${
+                    order.orderStatus === 'confirmed'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 shadow-emerald-500/10'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {order.orderStatus === 'confirmed' ? 'Resend Invoice / Confirmed' : 'Confirm Order'}
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  className="btn-primary py-2.5 px-4 rounded-xl text-xs font-bold shadow-lg shadow-brand-500/20 flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Receipt
+                </button>
+
+                {/* Sleek Icon-only Delete Button */}
+                <button
+                  onClick={() => setDeleteModal({ open: true, type: 'order' })}
+                  className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 transition-colors shrink-0"
+                  title="Delete Order"
+                >
+                  <Trash2 className="w-4.5 h-4.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Top Order Status & Summary Highlight Bar */}
+            <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-brand-500 no-print">
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Fulfillment Status</span>
+                  {getFulfillmentBadge(order.orderStatus)}
+                </div>
+
+                <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Payment Settlement</span>
+                  {getPaymentBadge(order.paymentStatus)}
+                </div>
+
+                <div className="h-8 w-px bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Logistics Status</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 capitalize">
+                    {order.shippingStatus || 'pending'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total Amount</span>
+                <span className="text-lg font-black text-brand-650 dark:text-brand-400">
+                  {currencySymbol}{parseFloat(order.totalAmount || 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-full">
         {/* Left Double Columns */}
@@ -696,6 +804,7 @@ const OrderDetail = () => {
                   className="form-input text-xs h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
                 >
                   <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
                   <option value="processing">Processing</option>
                   <option value="shipped">Shipped</option>
                   <option value="delivered">Delivered</option>
@@ -812,6 +921,81 @@ const OrderDetail = () => {
         title="Cancel Shiprocket Shipment"
         message="Are you sure you want to cancel this shipment on Shiprocket? This action cannot be undone and the AWB will be released."
       />
+
+      {/* Confirm Order Modal Popup */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800 dark:text-white">Confirm Order</h3>
+                  <p className="text-xs text-slate-400">Order #{order.orderNumber}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConfirmModal({ open: false, sendEmail: true })}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl text-xs text-slate-650 dark:text-slate-350">
+              <p className="font-semibold text-slate-800 dark:text-slate-200">Are you sure you want to confirm this order?</p>
+              <div className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <p>• Order status will be updated to <strong className="text-emerald-600 dark:text-emerald-400">Confirmed</strong>.</p>
+                <p>• Total Order Value: <strong>{currencySymbol}{parseFloat(order.totalAmount || 0).toFixed(2)}</strong></p>
+                {order.user?.email && (
+                  <p>• Customer Email: <strong>{order.user.email}</strong></p>
+                )}
+              </div>
+            </div>
+
+            <label className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-xl cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmModal.sendEmail}
+                onChange={(e) => setConfirmModal(prev => ({ ...prev, sendEmail: e.target.checked }))}
+                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 mt-0.5"
+              />
+              <div>
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 block">Send Official Tax Invoice Email</span>
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block leading-tight">Sends tax & price breakdown (GST, Subtotal, Shipping) to customer.</span>
+              </div>
+            </label>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModal({ open: false, sendEmail: true })}
+                disabled={confirming}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmOrder}
+                disabled={confirming}
+                className="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-lg shadow-emerald-600/20 flex items-center gap-2"
+              >
+                {confirming ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Confirm & Send Invoice
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
