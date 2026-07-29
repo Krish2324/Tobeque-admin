@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Camera, Plus, Search, Edit2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import DeleteModal from '../components/DeleteModal';
 
@@ -21,7 +21,7 @@ const CommunityStyleList = () => {
   const fetchStyles = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/community-styles');
+      const res = await api.get('/api/community-styles');
       setStyles(res.data.data || []);
     } catch (err) {
       showNotification('Failed to fetch styles', 'error');
@@ -38,7 +38,7 @@ const CommunityStyleList = () => {
   const confirmDelete = async () => {
     if (!styleToDelete) return;
     try {
-      await axios.delete(`/api/community-styles/${styleToDelete.id}`);
+      await api.delete(`/api/community-styles/${styleToDelete.id}`);
       showNotification('Style deleted successfully', 'success');
       fetchStyles();
     } catch (err) {
@@ -57,8 +57,8 @@ const CommunityStyleList = () => {
     const swapItem = styles[index + direction];
 
     try {
-      await axios.put(`/api/community-styles/${currentItem.id}`, { order: swapItem.order || (index + direction) });
-      await axios.put(`/api/community-styles/${swapItem.id}`, { order: currentItem.order || index });
+      await api.put(`/api/community-styles/${currentItem.id}`, { order: swapItem.order || (index + direction) });
+      await api.put(`/api/community-styles/${swapItem.id}`, { order: currentItem.order || index });
       fetchStyles();
     } catch (err) {
       showNotification('Failed to update order', 'error');

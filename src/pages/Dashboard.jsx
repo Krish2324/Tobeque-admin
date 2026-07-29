@@ -8,7 +8,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
-import axios from 'axios';
+import api from '../services/api';
 import StatsCard from '../components/StatsCard';
 import { SkeletonDashboard } from '../components/Skeleton';
 import { useNotification } from '../context/NotificationContext';
@@ -23,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('/api/dashboard/stats');
+        const res = await api.get('/api/dashboard/stats');
         if (res.data.success) {
           setStats(res.data.data);
         }

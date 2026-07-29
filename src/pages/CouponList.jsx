@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Ticket, Check, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
@@ -33,7 +33,7 @@ const CouponList = () => {
   const fetchCoupons = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/coupons');
+      const res = await api.get('/api/coupons');
       if (res.data.success) {
         setCoupons(res.data.coupons);
       }
@@ -102,9 +102,9 @@ const CouponList = () => {
 
       let res;
       if (editingCoupon) {
-        res = await axios.put(`/api/coupons/${editingCoupon.id}`, payload);
+        res = await api.put(`/api/coupons/${editingCoupon.id}`, payload);
       } else {
-        res = await axios.post('/api/coupons', payload);
+        res = await api.post('/api/coupons', payload);
       }
 
       if (res.data.success) {
@@ -122,7 +122,7 @@ const CouponList = () => {
 
   const handleDelete = async (id, codeStr) => {
     try {
-      const res = await axios.delete(`/api/coupons/${id}`);
+      const res = await api.delete(`/api/coupons/${id}`);
       if (res.data.success) {
         showNotification(`Coupon "${codeStr}" successfully removed.`, 'success');
         fetchCoupons();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Search, BookOpen, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import Table from '../components/Table';
 import DeleteModal from '../components/DeleteModal';
@@ -15,7 +15,7 @@ const BlogList = () => {
 
   const fetchBlogs = async () => {
     try {
-      const res = await axios.get('/api/blogs');
+      const res = await api.get('/api/blogs');
       setBlogs(res.data.data);
     } catch (err) {
       showNotification('Failed to fetch Style Journal articles', 'error');
@@ -30,7 +30,7 @@ const BlogList = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/blogs/${id}`);
+      await api.delete(`/api/blogs/${id}`);
       showNotification('Article deleted successfully', 'success');
       fetchBlogs();
     } catch (err) {
@@ -43,7 +43,7 @@ const BlogList = () => {
   const toggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'draft' ? 'published' : 'draft';
     try {
-      await axios.patch(`/api/blogs/${id}/status`, { status: newStatus });
+      await api.patch(`/api/blogs/${id}/status`, { status: newStatus });
       showNotification(`Article ${newStatus === 'published' ? 'published' : 'moved to draft'}`, 'success');
       fetchBlogs();
     } catch (err) {

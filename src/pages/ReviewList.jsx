@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, CheckCircle, ShieldAlert, Star, ShoppingBag, Eye, ShieldX } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,7 @@ const ReviewList = () => {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/reviews');
+      const res = await api.get('/api/reviews');
       if (res.data.success) {
         setReviews(res.data.reviews);
       }
@@ -35,7 +35,7 @@ const ReviewList = () => {
   const handleToggleApproval = async (id, currentVal, prodName) => {
     const nextVal = !currentVal;
     try {
-      const res = await axios.put(`/api/reviews/${id}/approve`, { approve: nextVal });
+      const res = await api.put(`/api/reviews/${id}/approve`, { approve: nextVal });
       if (res.data.success) {
         showNotification(
           `Review for "${prodName}" has been successfully ${nextVal ? 'approved and published' : 'hidden'}!`,
@@ -50,7 +50,7 @@ const ReviewList = () => {
 
   const handleDelete = async (id) => {
     try {
-      const res = await axios.delete(`/api/reviews/${id}`);
+      const res = await api.delete(`/api/reviews/${id}`);
       if (res.data.success) {
         showNotification('Review deleted successfully.', 'success');
         fetchReviews();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Search, ShieldAlert, Check, X, ShieldCheck, Trash2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
@@ -35,7 +35,7 @@ const CustomerList = () => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/customers', {
+      const res = await api.get('/api/customers', {
         params: { page, limit, search, status: statusFilter }
       });
       if (res.data.success) {
@@ -59,7 +59,7 @@ const CustomerList = () => {
   const toggleStatus = async (id, currentStatus, email) => {
     const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
     try {
-      const res = await axios.put(`/api/customers/${id}/status`, { status: nextStatus });
+      const res = await api.put(`/api/customers/${id}/status`, { status: nextStatus });
       if (res.data.success) {
         showNotification(`Customer account state changed successfully!`, 'success');
         fetchCustomers();
@@ -74,7 +74,7 @@ const CustomerList = () => {
   // Delete customer
   const deleteCustomer = async (id, email) => {
     try {
-      const res = await axios.delete(`/api/customers/${id}`);
+      const res = await api.delete(`/api/customers/${id}`);
       if (res.data.success) {
         showNotification(`Customer deleted successfully!`, 'success');
         fetchCustomers();
@@ -92,7 +92,7 @@ const CustomerList = () => {
     setHistoryOpen(true);
     setLoadingHistory(true);
     try {
-      const res = await axios.get(`/api/customers/${cust.id}`);
+      const res = await api.get(`/api/customers/${cust.id}`);
       if (res.data.success) {
         setCustomerOrders(res.data.orders);
       }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
 const JobPostingForm = () => {
@@ -33,7 +33,7 @@ const JobPostingForm = () => {
 
   const fetchJob = async () => {
     try {
-      const res = await axios.get(`/api/job-postings/${id}`);
+      const res = await api.get(`/api/job-postings/${id}`);
       setFormData(res.data.data);
     } catch (err) {
       showNotification('Failed to fetch job details', 'error');
@@ -74,10 +74,10 @@ const JobPostingForm = () => {
     
     try {
       if (isEditMode) {
-        await axios.put(`/api/job-postings/${id}`, formData);
+        await api.put(`/api/job-postings/${id}`, formData);
         showNotification('Job updated successfully', 'success');
       } else {
-        await axios.post('/api/job-postings', formData);
+        await api.post('/api/job-postings', formData);
         showNotification('Job posted successfully', 'success');
       }
       navigate('/job-postings');

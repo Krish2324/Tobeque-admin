@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, Layers, Search, X, CheckCircle2, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Modal from '../components/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +37,7 @@ const SeasonCollection = () => {
   const fetchCollection = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/season-collection/admin');
+      const res = await api.get('/api/season-collection/admin');
       if (res.data.success) {
         setItems(res.data.data);
       }
@@ -51,7 +51,7 @@ const SeasonCollection = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('/api/categories/public');
+      const res = await api.get('/api/categories/public');
       if (res.data.success) {
         setAllCategories(res.data.categories || []);
       }
@@ -112,7 +112,7 @@ const SeasonCollection = () => {
         formData.append('imageOverride', imageOverride.trim());
       }
 
-      const res = await axios.post('/api/season-collection', formData, {
+      const res = await api.post('/api/season-collection', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -159,7 +159,7 @@ const SeasonCollection = () => {
         formData.append('imageOverride', ''); // Clear it
       }
 
-      const res = await axios.put(`/api/season-collection/${editingItem.id}`, formData, {
+      const res = await api.put(`/api/season-collection/${editingItem.id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data.success) {
@@ -178,7 +178,7 @@ const SeasonCollection = () => {
   const handleDelete = async (id, label) => {
     if (!window.confirm(`Remove "${label}" from the Season Collection?`)) return;
     try {
-      const res = await axios.delete(`/api/season-collection/${id}`);
+      const res = await api.delete(`/api/season-collection/${id}`);
       if (res.data.success) {
         showNotification('Item removed from Season Collection.', 'success');
         fetchCollection();
@@ -191,7 +191,7 @@ const SeasonCollection = () => {
   // ── Toggle Active ─────────────────────────────────────────────────────────
   const handleToggleActive = async (item) => {
     try {
-      await axios.put(`/api/season-collection/${item.id}`, { isActive: !item.isActive });
+      await api.put(`/api/season-collection/${item.id}`, { isActive: !item.isActive });
       fetchCollection();
     } catch {
       showNotification('Failed to toggle visibility.', 'error');

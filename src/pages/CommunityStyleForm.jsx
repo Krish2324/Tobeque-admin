@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
 const CommunityStyleForm = () => {
@@ -32,7 +32,7 @@ const CommunityStyleForm = () => {
 
   const fetchStyle = async () => {
     try {
-      const res = await axios.get(`/api/community-styles/${id}`);
+      const res = await api.get(`/api/community-styles/${id}`);
       const data = res.data.data;
       setFormData({
         altText: data.altText,
@@ -105,10 +105,10 @@ const CommunityStyleForm = () => {
       const headers = { 'Content-Type': 'multipart/form-data' };
 
       if (isEditMode) {
-        await axios.put(`/api/community-styles/${id}`, data, { headers });
+        await api.put(`/api/community-styles/${id}`, data, { headers });
         showNotification('Style updated successfully', 'success');
       } else {
-        await axios.post('/api/community-styles', data, { headers });
+        await api.post('/api/community-styles', data, { headers });
         showNotification('Style added successfully', 'success');
       }
       navigate('/community-styles');

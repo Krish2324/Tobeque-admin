@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, Upload, Plus, Trash2, Camera } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
 const AboutUsSettings = () => {
@@ -31,7 +31,7 @@ const AboutUsSettings = () => {
 
   const fetchAboutUs = async () => {
     try {
-      const res = await axios.get('/api/about-us');
+      const res = await api.get('/api/about-us');
       if (res.data.data) {
         const data = res.data.data;
         setFormData({
@@ -119,7 +119,7 @@ const AboutUsSettings = () => {
         data.append('missionImage', imageFile);
       }
 
-      await axios.put('/api/about-us', data, {
+      await api.put('/api/about-us', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       showNotification('About Us updated successfully', 'success');

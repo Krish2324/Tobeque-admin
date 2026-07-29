@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Filter, ShoppingBag, IndianRupee, RefreshCw } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -27,7 +27,7 @@ const OrderList = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/orders', {
+      const res = await api.get('/api/orders', {
         params: {
           page,
           limit,

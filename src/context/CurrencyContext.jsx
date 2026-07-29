@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 const CurrencyContext = createContext({
   currencySymbol: '₹',
@@ -25,7 +25,7 @@ export const CurrencyProvider = ({ children }) => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get('/api/settings/public');
+        const res = await api.get('/api/settings/public');
         if (res.data.success && res.data.settings?.storeCurrency) {
           const curr = res.data.settings.storeCurrency;
           setStoreCurrency(curr);

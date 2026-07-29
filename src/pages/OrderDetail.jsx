@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Truck, FileText, User, ShoppingBag, CreditCard, ChevronRight, Trash2, Package, Tag, MapPin, Calendar, RefreshCw, X, ExternalLink, CheckCircle2, Clock, AlertCircle, Zap } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
 import DeleteModal from '../components/DeleteModal';
@@ -37,7 +37,7 @@ const OrderDetail = () => {
   const fetchOrderDetails = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/orders/${id}`);
+      const res = await api.get(`/api/orders/${id}`);
       if (res.data.success) {
         const ord = res.data.order;
         setOrder(ord);
@@ -59,7 +59,7 @@ const OrderDetail = () => {
   const fetchSrStatus = useCallback(async () => {
     setSrLoading(true);
     try {
-      const res = await axios.get(`/api/shipping/orders/${id}/status`);
+      const res = await api.get(`/api/shipping/orders/${id}/status`);
       if (res.data.success) {
         setSrStatus(res.data.shiprocket);
       }
@@ -81,7 +81,7 @@ const OrderDetail = () => {
     e.preventDefault();
     setUpdating(true);
     try {
-      const res = await axios.put(`/api/orders/${id}/status`, {
+      const res = await api.put(`/api/orders/${id}/status`, {
         orderStatus,
         paymentStatus,
         shippingStatus,
@@ -104,7 +104,7 @@ const OrderDetail = () => {
   const handleConfirmOrder = async () => {
     setConfirming(true);
     try {
-      const res = await axios.post(`/api/orders/${id}/confirm`, {
+      const res = await api.post(`/api/orders/${id}/confirm`, {
         sendEmail: confirmModal.sendEmail
       });
       if (res.data.success) {
@@ -139,14 +139,14 @@ const OrderDetail = () => {
   };
 
   const pushToShiprocket = () => handleSrAction('push', async () => {
-    const res = await axios.post(`/api/shipping/orders/${id}/push`);
+    const res = await api.post(`/api/shipping/orders/${id}/push`);
     if (res.data.success) showNotification(res.data.message, 'success');
     else showNotification(res.data.error || 'Push failed', 'error');
   });
 
   const assignCourier = () => handleSrAction('assign', async () => {
     try {
-      const res = await axios.post(`/api/shipping/orders/${id}/assign-courier`);
+      const res = await api.post(`/api/shipping/orders/${id}/assign-courier`);
       if (res.data.success) showNotification(`AWB generated: ${res.data.awbCode} via ${res.data.courierName}`, 'success');
       else showNotification(res.data.error || 'Courier assignment failed', 'error');
     } catch (err) {
@@ -158,7 +158,7 @@ const OrderDetail = () => {
     if (!pickupDate) { showNotification('Please select a pickup date', 'error'); return; }
     handleSrAction('pickup', async () => {
       try {
-        const res = await axios.post(`/api/shipping/orders/${id}/schedule-pickup`, { pickupDate });
+        const res = await api.post(`/api/shipping/orders/${id}/schedule-pickup`, { pickupDate });
         if (res.data.success) showNotification(res.data.message, 'success');
         else showNotification(res.data.error || 'Pickup scheduling failed', 'error');
       } catch (err) {
@@ -169,7 +169,7 @@ const OrderDetail = () => {
 
   const generateLabel = () => handleSrAction('label', async () => {
     try {
-      const res = await axios.post(`/api/shipping/orders/${id}/generate-label`);
+      const res = await api.post(`/api/shipping/orders/${id}/generate-label`);
       if (res.data.success) {
         showNotification('Shipping label generated!', 'success');
         if (res.data.labelUrl) window.open(res.data.labelUrl, '_blank');
@@ -181,7 +181,7 @@ const OrderDetail = () => {
 
   const generateManifest = () => handleSrAction('manifest', async () => {
     try {
-      const res = await axios.post(`/api/shipping/orders/${id}/generate-manifest`);
+      const res = await api.post(`/api/shipping/orders/${id}/generate-manifest`);
       if (res.data.success) {
         showNotification('Manifest generated!', 'success');
         if (res.data.manifestUrl) window.open(res.data.manifestUrl, '_blank');
@@ -193,7 +193,7 @@ const OrderDetail = () => {
 
   const fetchTracking = () => handleSrAction('track', async () => {
     try {
-      const res = await axios.get(`/api/shipping/orders/${id}/track`);
+      const res = await api.get(`/api/shipping/orders/${id}/track`);
       if (res.data.success) {
         setTracking(res.data);
         setShowTracking(true);
@@ -211,7 +211,7 @@ const OrderDetail = () => {
     setDeleteModal({ open: false, type: null });
     handleSrAction('cancel', async () => {
       try {
-        const res = await axios.post(`/api/shipping/orders/${id}/cancel`);
+        const res = await api.post(`/api/shipping/orders/${id}/cancel`);
         if (res.data.success) showNotification('Shiprocket shipment cancelled.', 'success');
         else showNotification(res.data.error || 'Cancellation failed', 'error');
       } catch (err) {
@@ -222,7 +222,7 @@ const OrderDetail = () => {
 
   const handleDeleteOrder = async () => {
     try {
-      const res = await axios.delete(`/api/orders/${id}`);
+      const res = await api.delete(`/api/orders/${id}`);
       if (res.data.success) {
         showNotification('Order deleted successfully', 'success');
         navigate('/orders');

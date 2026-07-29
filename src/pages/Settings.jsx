@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save, Plus, X, Truck, Info } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,7 +45,7 @@ const Settings = () => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/settings');
+      const res = await api.get('/api/settings');
       if (res.data.success) {
         const settings = res.data.settings;
         setStoreName(settings.storeName || '');
@@ -91,7 +91,7 @@ const Settings = () => {
         const payload = { firstName, lastName, email };
         if (newPassword) payload.password = newPassword;
 
-        const res = await axios.put(`/api/auth/profile`, payload);
+        const res = await api.put(`/api/auth/profile`, payload);
         if (res.data.success) {
           showNotification('Profile updated successfully! Session refreshed.', 'success');
           setNewPassword('');
@@ -116,7 +116,7 @@ const Settings = () => {
           codFee
         };
 
-        const res = await axios.post('/api/settings', payload);
+        const res = await api.post('/api/settings', payload);
         if (res.data.success) {
           showNotification('System settings saved successfully!', 'success');
         }

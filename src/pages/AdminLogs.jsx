@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Search, RefreshCw, FileText } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 
@@ -21,7 +21,7 @@ const AdminLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/dashboard/stats');
+      const res = await api.get('/api/dashboard/stats');
       if (res.data.success) {
         // Let's formulate structured admin audits
         const allLogs = res.data.data.recentActivity.map(a => ({

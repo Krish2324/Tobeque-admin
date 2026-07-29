@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Search, Filter, Image, Package, Check, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +35,7 @@ const ProductList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/products', {
+      const res = await api.get('/api/products', {
         params: {
           page,
           limit,
@@ -63,8 +63,8 @@ const ProductList = () => {
   const fetchFilters = async () => {
     try {
       const [catRes, brandRes] = await Promise.all([
-        axios.get('/api/categories'),
-        axios.get('/api/categories/brands/all')
+        api.get('/api/categories'),
+        api.get('/api/categories/brands/all')
       ]);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (brandRes.data.success) setBrands(brandRes.data.brands);
@@ -83,7 +83,7 @@ const ProductList = () => {
 
   const handleDelete = async (id, name) => {
     try {
-      const res = await axios.delete(`/api/products/${id}`);
+      const res = await api.delete(`/api/products/${id}`);
       if (res.data.success) {
         showNotification(`Product "${name}" deleted successfully.`, 'success');
         fetchProducts();

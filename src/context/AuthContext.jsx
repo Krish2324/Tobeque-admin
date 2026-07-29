@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -10,9 +10,9 @@ export const AuthProvider = ({ children }) => {
 
   // Set default authorization header
   if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
   }
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await axios.get('/api/auth/profile');
+        const res = await api.get('/api/auth/profile');
         if (res.data.success) {
           setAdmin(res.data.admin);
         } else {
@@ -42,14 +42,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = (jwtToken, adminData) => {
     localStorage.setItem('admin_token', jwtToken);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
     setToken(jwtToken);
     setAdmin(adminData);
   };
 
   const logout = () => {
     localStorage.removeItem('admin_token');
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
     setToken('');
     setAdmin(null);
   };

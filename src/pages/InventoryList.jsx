@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, Plus, Search, HelpCircle, Package, ArrowUpRight } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
 import { useNotification } from '../context/NotificationContext';
@@ -24,8 +24,8 @@ const InventoryList = () => {
     setLoading(true);
     try {
       const [logRes, prodRes] = await Promise.all([
-        axios.get('/api/reports/sales'), // we can load logs dynamically, or query orders/products
-        axios.get('/api/products?limit=100')
+        api.get('/api/reports/sales'), // we can load logs dynamically, or query orders/products
+        api.get('/api/products?limit=100')
       ]);
       
       // Let's call our main product list, and log endpoints
@@ -44,7 +44,7 @@ const InventoryList = () => {
       // Let's send a fetch to "/api/products" but let's query custom logs if we mapped them, or let's create a quick API fetch.
       // Wait, let's look at what we wrote in seedData: we seed mock stock levels.
       // Let's write a clean fallback list of logs if database logs are empty.
-      const logsRes = await axios.get('/api/dashboard/stats');
+      const logsRes = await api.get('/api/dashboard/stats');
       if (logsRes.data.success) {
         // Let's extract activity logs
         const mockAuditLogs = logsRes.data.data.recentActivity
@@ -87,7 +87,7 @@ const InventoryList = () => {
 
       const newQty = targetProd.stockQuantity + parseInt(stockChanged);
 
-      const res = await axios.put(`/api/products/${selectedProductId}`, {
+      const res = await api.put(`/api/products/${selectedProductId}`, {
         stockQuantity: newQty
       });
 

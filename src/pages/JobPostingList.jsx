@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, Plus, Search, Edit2, Trash2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import Table from '../components/Table';
 import DeleteModal from '../components/DeleteModal';
@@ -22,7 +22,7 @@ const JobPostingList = () => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/job-postings');
+      const res = await api.get('/api/job-postings');
       setJobs(res.data.data || []);
     } catch (err) {
       showNotification('Failed to fetch jobs', 'error');
@@ -39,7 +39,7 @@ const JobPostingList = () => {
   const confirmDelete = async () => {
     if (!jobToDelete) return;
     try {
-      await axios.delete(`/api/job-postings/${jobToDelete.id}`);
+      await api.delete(`/api/job-postings/${jobToDelete.id}`);
       showNotification('Job deleted successfully', 'success');
       fetchJobs();
     } catch (err) {

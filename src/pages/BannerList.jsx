@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
@@ -35,7 +35,7 @@ const BannerList = () => {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/banners');
+      const res = await api.get('/api/banners');
       if (res.data.success) {
         setBanners(res.data.banners);
       }
@@ -107,11 +107,11 @@ const BannerList = () => {
       let res;
       if (editingBanner) {
         const bannerId = editingBanner.id || editingBanner._id;
-        res = await axios.put(`/api/banners/${bannerId}`, formData, {
+        res = await api.put(`/api/banners/${bannerId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        res = await axios.post('/api/banners', formData, {
+        res = await api.post('/api/banners', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
@@ -130,7 +130,7 @@ const BannerList = () => {
 
   const handleDelete = async (id, titleStr) => {
     try {
-      const res = await axios.delete(`/api/banners/${id}`);
+      const res = await api.delete(`/api/banners/${id}`);
       if (res.data.success) {
         showNotification('Promo banner deleted successfully.', 'success');
         fetchBanners();

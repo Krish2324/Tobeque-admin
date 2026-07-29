@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileBarChart, Calendar, Download, TrendingUp, IndianRupee, Tag, Truck } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Table from '../components/Table';
 import StatsCard from '../components/StatsCard';
 import { useNotification } from '../context/NotificationContext';
@@ -33,7 +33,7 @@ const Reports = () => {
     setLoading(true);
 
     try {
-      const res = await axios.get('/api/reports/sales', {
+      const res = await api.get('/api/reports/sales', {
         params: { startDate, endDate }
       });
       if (res.data.success) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
 import RichTextEditor from '../components/RichTextEditor';
@@ -96,10 +96,10 @@ const ProductForm = () => {
   const fetchDropdowns = async () => {
     try {
       const [catRes, brandRes, settingsRes, productsRes] = await Promise.all([
-        axios.get('/api/categories'),
-        axios.get('/api/categories/brands/all'),
-        axios.get('/api/settings'),
-        axios.get('/api/products?limit=1000') // Fetch a large number of products for the dropdown
+        api.get('/api/categories'),
+        api.get('/api/categories/brands/all'),
+        api.get('/api/settings'),
+        api.get('/api/products?limit=1000') // Fetch a large number of products for the dropdown
       ]);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (brandRes.data.success) setBrands(brandRes.data.brands);
@@ -126,7 +126,7 @@ const ProductForm = () => {
   // Load existing product if Edit mode
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`/api/products/${id}`);
+      const res = await api.get(`/api/products/${id}`);
       if (res.data.success) {
         const prod = res.data.product;
         setName(prod.name);
@@ -229,7 +229,7 @@ const ProductForm = () => {
   const handleRemoveExistingImage = async (imageId) => {
     if (!window.confirm('Are you sure you want to delete this image?')) return;
     try {
-      const res = await axios.delete(`/api/products/${id}/images/${imageId}`);
+      const res = await api.delete(`/api/products/${id}/images/${imageId}`);
       if (res.data.success) {
         setExistingImages(existingImages.filter(img => img.id !== imageId));
         showNotification('Image deleted successfully.', 'success');
@@ -402,11 +402,11 @@ const ProductForm = () => {
 
       let res;
       if (isEdit) {
-        res = await axios.put(`/api/products/${id}`, formData, {
+        res = await api.put(`/api/products/${id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        res = await axios.post('/api/products', formData, {
+        res = await api.post('/api/products', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }

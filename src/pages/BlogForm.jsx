@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
 const BlogForm = () => {
@@ -35,7 +35,7 @@ const BlogForm = () => {
 
   const fetchBlog = async () => {
     try {
-      const res = await axios.get(`/api/blogs/${id}`);
+      const res = await api.get(`/api/blogs/${id}`);
       setFormData(res.data.data);
     } catch (err) {
       showNotification('Failed to fetch article details', 'error');
@@ -66,7 +66,7 @@ const BlogForm = () => {
 
     setUploadingImage(true);
     try {
-      const res = await axios.post('/api/blogs/upload-image', uploadData, {
+      const res = await api.post('/api/blogs/upload-image', uploadData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -86,10 +86,10 @@ const BlogForm = () => {
     
     try {
       if (isEditMode) {
-        await axios.put(`/api/blogs/${id}`, formData);
+        await api.put(`/api/blogs/${id}`, formData);
         showNotification('Article updated successfully', 'success');
       } else {
-        await axios.post('/api/blogs', formData);
+        await api.post('/api/blogs', formData);
         showNotification('Article created successfully', 'success');
       }
       navigate('/style-journal');

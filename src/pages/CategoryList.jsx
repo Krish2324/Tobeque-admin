@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Folder, Image, ShieldAlert } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
@@ -44,8 +44,8 @@ const CategoryList = () => {
     setLoading(true);
     try {
       const [catRes, brandRes] = await Promise.all([
-        axios.get('/api/categories'),
-        axios.get('/api/categories/brands/all')
+        api.get('/api/categories'),
+        api.get('/api/categories/brands/all')
       ]);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (brandRes.data.success) setBrands(brandRes.data.brands);
@@ -129,11 +129,11 @@ const CategoryList = () => {
 
       let res;
       if (editingCategory) {
-        res = await axios.put(`/api/categories/${editingCategory.id}`, formData, {
+        res = await api.put(`/api/categories/${editingCategory.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        res = await axios.post('/api/categories', formData, {
+        res = await api.post('/api/categories', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
@@ -153,7 +153,7 @@ const CategoryList = () => {
 
   const handleCatDelete = async (id, name) => {
     try {
-      const res = await axios.delete(`/api/categories/${id}`);
+      const res = await api.delete(`/api/categories/${id}`);
       if (res.data.success) {
         showNotification(`Category "${name}" deleted successfully.`, 'success');
         fetchAllData();
@@ -198,11 +198,11 @@ const CategoryList = () => {
 
       let res;
       if (editingBrand) {
-        res = await axios.put(`/api/categories/brands/${editingBrand.id}`, formData, {
+        res = await api.put(`/api/categories/brands/${editingBrand.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        res = await axios.post('/api/categories/brands', formData, {
+        res = await api.post('/api/categories/brands', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
@@ -222,7 +222,7 @@ const CategoryList = () => {
 
   const handleBrandDelete = async (id, name) => {
     try {
-      const res = await axios.delete(`/api/categories/brands/${id}`);
+      const res = await api.delete(`/api/categories/brands/${id}`);
       if (res.data.success) {
         showNotification(`Brand "${name}" deleted successfully.`, 'success');
         fetchAllData();
