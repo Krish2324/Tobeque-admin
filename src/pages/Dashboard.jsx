@@ -86,7 +86,7 @@ const Dashboard = () => {
           title="Total Gross Revenue"
           value={`${currencySymbol}${widgets.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
           icon={IndianRupee}
-          trend={{ type: 'up', value: '14.2%' }}
+          trend={widgets.revenueTrend != null ? { type: widgets.revenueTrend >= 0 ? 'up' : 'down', value: `${Math.abs(widgets.revenueTrend)}%` } : undefined}
           description="versus past month"
           color="emerald"
         />
@@ -94,16 +94,16 @@ const Dashboard = () => {
           title="Total Store Orders"
           value={widgets.totalOrders}
           icon={ShoppingCart}
-          trend={{ type: 'up', value: '8.5%' }}
-          description="weekly order volume"
+          trend={widgets.ordersTrend != null ? { type: widgets.ordersTrend >= 0 ? 'up' : 'down', value: `${Math.abs(widgets.ordersTrend)}%` } : undefined}
+          description="versus past month"
           color="brand"
         />
         <StatsCard
           title="Active Customers"
           value={widgets.totalCustomers}
           icon={Users}
-          trend={{ type: 'up', value: '11.8%' }}
-          description="registered users base"
+          trend={widgets.customersTrend != null ? { type: widgets.customersTrend >= 0 ? 'up' : 'down', value: `${Math.abs(widgets.customersTrend)}%` } : undefined}
+          description="versus past month"
           color="sky"
         />
         <StatsCard
@@ -119,26 +119,27 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-white dark:bg-dark-850 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl shadow-sm">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Avg Order Value (AOV)</span>
-          <span className="text-sm font-extrabold text-slate-800 dark:text-white">{currencySymbol}823.61</span>
-          <span className="text-[9px] font-bold text-emerald-500">+1.2% this week</span>
+          <span className="text-sm font-extrabold text-slate-800 dark:text-white">
+            {currencySymbol}{(widgets.aov || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-[9px] font-bold text-emerald-500">per paid order average</span>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-slate-100 dark:border-slate-800/80 pl-4">
-          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Conversion Ratio</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Fulfillment Rate</span>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-extrabold text-slate-800 dark:text-white">3.84%</span>
-            <span className="text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-1 py-0.2 rounded">+0.8%</span>
+            <span className="text-sm font-extrabold text-slate-800 dark:text-white">{widgets.fulfillmentRate || 0}%</span>
           </div>
-          <span className="text-[9px] font-bold text-slate-400">Industry standard: 2.5%</span>
+          <span className="text-[9px] font-bold text-slate-400">delivered orders</span>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-slate-100 dark:border-slate-800/80 pl-4">
-          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Cart Abandonment</span>
-          <span className="text-sm font-extrabold text-slate-800 dark:text-white">12.5%</span>
-          <span className="text-[9px] font-bold text-emerald-500">Decreased by 3.2%</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Pending Orders</span>
+          <span className="text-sm font-extrabold text-brand-600 dark:text-brand-450">{widgets.pendingOrders || 0}</span>
+          <span className="text-[9px] font-bold text-slate-400">awaiting processing</span>
         </div>
         <div className="flex flex-col gap-0.5 border-l border-slate-100 dark:border-slate-800/80 pl-4">
-          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Fulfillment SLA</span>
-          <span className="text-sm font-extrabold text-brand-600 dark:text-brand-450">99.98%</span>
-          <span className="text-[9px] font-bold text-slate-400">Target score: 98%</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Low Stock SKUs</span>
+          <span className="text-sm font-extrabold text-rose-500 dark:text-rose-400">{widgets.lowStockCount || 0}</span>
+          <span className="text-[9px] font-bold text-slate-400">inventory alerts</span>
         </div>
       </div>
 
