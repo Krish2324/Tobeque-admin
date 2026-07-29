@@ -39,14 +39,15 @@ const ProductForm = () => {
   const [status, setStatus] = useState('draft');
   const [isFeatured, setIsFeatured] = useState(false);
   const [categoryId, setCategoryId] = useState('');
+  const [additionalCategories, setAdditionalCategories] = useState([]);
   const [brandId, setBrandId] = useState('');
   const [isOnSaleSection, setIsOnSaleSection] = useState(false);
   const [isHotRightNow, setIsHotRightNow] = useState(false);
   const [show7DayReturn, setShow7DayReturn] = useState(true);
   const [showFreeShipping, setShowFreeShipping] = useState(true);
   const [showCodAvailable, setShowCodAvailable] = useState(true);
-  const [styleItWith, setStyleItWith] = useState([]); // array of product IDs
-  const [allProducts, setAllProducts] = useState([]);
+  const [styleItWith, setStyleItWith] = useState([]); // array of product objects {id, name, sku, thumbnail}
+  const [allProducts, setAllProducts] = useState([]); // Search results
   const [styleSearchQuery, setStyleSearchQuery] = useState('');
 
   // File Upload State
@@ -92,18 +93,34 @@ const ProductForm = () => {
   const [variantOptName, setVariantOptName] = useState('');
   const [variantOptVals, setVariantOptVals] = useState('');
 
+  // Compile flattened category options list
+  const getCategoryOptions = () => {
+    const list = [];
+    const recurse = (cats, depth = 0) => {
+      cats.forEach(c => {
+        list.push({ id: c.id || c._id, name: c.name, depth });
+        
+        if (c.subcategories && c.subcategories.length > 0) {
+          recurse(c.subcategories, depth + 1);
+        }
+      });
+    };
+    if (categories && Array.isArray(categories)) {
+      recurse(categories);
+    }
+    return list;
+  };
+
   // Fetch options lists and settings
   const fetchDropdowns = async () => {
     try {
-      const [catRes, brandRes, settingsRes, productsRes] = await Promise.all([
+      const [catRes, brandRes, settingsRes] = await Promise.all([
         api.get('/api/categories'),
         api.get('/api/categories/brands/all'),
-        api.get('/api/settings'),
-        api.get('/api/products?limit=1000') // Fetch a large number of products for the dropdown
+        api.get('/api/settings')
       ]);
       if (catRes.data.success) setCategories(catRes.data.categories);
       if (brandRes.data.success) setBrands(brandRes.data.brands);
-      if (productsRes.data && productsRes.data.success) setAllProducts(productsRes.data.data.products);
       if (settingsRes.data.success) {
         if (settingsRes.data.settings.gstBrackets) {
           const parsedBrackets = settingsRes.data.settings.gstBrackets
@@ -143,6 +160,7 @@ const ProductForm = () => {
         setStatus(prod.status);
         setIsFeatured(prod.isFeatured);
         setCategoryId(prod.category ? (typeof prod.category === 'object' ? (prod.category.id || prod.category._id) : prod.category) : (prod.categoryId || ''));
+        setAdditionalCategories(prod.additionalCategories || []);
         setBrandId(prod.brand ? (typeof prod.brand === 'object' ? (prod.brand.id || prod.brand._id) : prod.brand) : (prod.brandId || ''));
         setIsOnSaleSection(prod.isOnSaleSection || false);
         setIsHotRightNow(prod.isHotRightNow || false);
@@ -161,7 +179,7 @@ const ProductForm = () => {
         setSeoDescription(prod.seoDescription || '');
         setSeoKeywords(prod.seoKeywords || '');
         setSeoSchema(prod.seoSchema || '');
-        setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? p.id || p._id : p) : []);
+        setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
 
         setCountdownEvergreen(prod.countdownEvergreen || false);
         setRestartCountdownAfter(prod.restartCountdownAfter || '');
@@ -208,6 +226,24 @@ const ProductForm = () => {
     fetchDropdowns();
     if (isEdit) fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (styleSearchQuery.trim().length > 1) {
+      const delay = setTimeout(async () => {
+        try {
+          const res = await api.get(`/api/products?search=${styleSearchQuery}&limit=15`);
+          if (res.data && res.data.success) {
+            setAllProducts(res.data.data.products);
+          }
+        } catch (err) {
+          console.error('Error fetching search results:', err);
+        }
+      }, 300);
+      return () => clearTimeout(delay);
+    } else {
+      setAllProducts([]);
+    }
+  }, [styleSearchQuery]);
 
   // Handle local thumbnail preview
   const handleThumbnailChange = (e) => {
@@ -358,6 +394,7 @@ const ProductForm = () => {
       formData.append('showFreeShipping', showFreeShipping);
       formData.append('showCodAvailable', showCodAvailable);
       formData.append('categoryId', categoryId);
+      formData.append('additionalCategories', JSON.stringify(additionalCategories));
       formData.append('brandId', brandId);
       formData.append('slug', slug);
       formData.append('seoTitle', seoTitle);
@@ -379,7 +416,7 @@ const ProductForm = () => {
       formData.append('preFilledMessage', preFilledMessage);
       formData.append('displaySettings', displaySettings);
       formData.append('variants', JSON.stringify(variantsList));
-      formData.append('styleItWith', JSON.stringify(styleItWith));
+      formData.append('styleItWith', JSON.stringify(styleItWith.map(p => p.id)));
 
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
@@ -548,14 +585,10 @@ const ProductForm = () => {
                   {styleSearchQuery.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[300px] overflow-y-auto rounded-b">
                       {(() => {
-                        const available = allProducts.filter(p => 
-                          p.id !== id && 
-                          !styleItWith.includes(p.id) && 
-                          (p.name.toLowerCase().includes(styleSearchQuery.toLowerCase()) || (p.sku && p.sku.toLowerCase().includes(styleSearchQuery.toLowerCase())))
-                        );
-                        if (available.length === 0) return <div className="p-3 text-sm text-slate-500">No matching products found.</div>;
+                        const available = allProducts.filter(p => p.id !== id && !styleItWith.find(s => s.id === p.id));
+                        if (available.length === 0) return <div className="p-3 text-sm text-slate-500">No products found.</div>;
                         return available.map(p => (
-                          <div key={p.id} className="flex items-center gap-3 p-2 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer" onClick={() => { setStyleItWith([...styleItWith, p.id]); setStyleSearchQuery(''); }}>
+                          <div key={p.id} className="flex items-center gap-3 p-2 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer" onClick={() => { setStyleItWith([...styleItWith, { id: p.id, name: p.name, sku: p.sku, thumbnail: p.thumbnail }]); setStyleSearchQuery(''); }}>
                             <img src={p.thumbnail ? (p.thumbnail.startsWith('http') ? p.thumbnail : `/${p.thumbnail.replace(/^\/+/, '')}`) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
                             <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                               <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name}</p>
@@ -578,14 +611,14 @@ const ProductForm = () => {
                     <label className="text-sm text-slate-500 dark:text-slate-400">Selected</label>
                   </div>
                   <div className="flex-1 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-900/50">
-                    {allProducts.filter(p => styleItWith.includes(p.id)).map(p => (
+                    {styleItWith.map(p => (
                       <div key={p.id} className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 last:border-b-0">
                         <img src={p.thumbnail ? (p.thumbnail.startsWith('http') ? p.thumbnail : `/${p.thumbnail.replace(/^\/+/, '')}`) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
                         <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                          <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name || 'Product'}</p>
                           <span className="text-[10px] text-slate-400 whitespace-nowrap">SKU: {p.sku || 'N/A'}</span>
                         </div>
-                        <button type="button" onClick={() => setStyleItWith(styleItWith.filter(i => i !== p.id))} className="w-8 h-8 bg-slate-200 dark:bg-slate-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 flex items-center justify-center rounded shrink-0 transition-colors">
+                        <button type="button" onClick={() => setStyleItWith(styleItWith.filter(i => i.id !== p.id))} className="w-8 h-8 bg-slate-200 dark:bg-slate-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 flex items-center justify-center rounded shrink-0 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -1178,19 +1211,61 @@ const ProductForm = () => {
               </select>
             </div>
 
-            <div>
-              <label className="form-label">Placement Category</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="form-input h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
-              >
-                <option value="">Select placement category</option>
-                {categories.map((cat) => {
-                  const catVal = cat.id || cat._id;
-                  return <option key={catVal} value={catVal}>{cat.name}</option>;
+            <div className="pt-2">
+              <label className="form-label text-xs mb-1 block">Placement Categories</label>
+              <span className="text-[10px] text-slate-400 block mb-2">Check all categories where this product should appear. The first selected will be the primary category.</span>
+              <div className="form-input bg-slate-50 dark:bg-slate-800 text-xs p-1 h-[200px] overflow-y-auto custom-scrollbar flex flex-col gap-0.5 border border-slate-200 dark:border-slate-700 rounded">
+                {getCategoryOptions().map((opt) => {
+                  const isPrimary = categoryId === opt.id;
+                  const isAdditional = additionalCategories.includes(opt.id);
+                  const isChecked = isPrimary || isAdditional;
+                  
+                  return (
+                    <label 
+                      key={opt.id} 
+                      style={{ paddingLeft: `${opt.depth * 20 + 8}px` }}
+                      className={`flex items-center justify-between gap-2 pr-2 py-2 hover:bg-slate-100 dark:hover:bg-slate-750 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0 ${isPrimary ? 'bg-brand-50/50 dark:bg-brand-900/20' : ''}`}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <input
+                          type="checkbox"
+                          className={`rounded border-slate-300 dark:border-slate-600 focus:ring-brand-500 bg-white dark:bg-slate-900 shrink-0 ${isPrimary ? 'text-brand-600' : 'text-slate-600'}`}
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              if (!categoryId) {
+                                setCategoryId(opt.id);
+                              } else {
+                                setAdditionalCategories([...additionalCategories, opt.id]);
+                              }
+                            } else {
+                              if (isPrimary) {
+                                if (additionalCategories.length > 0) {
+                                  setCategoryId(additionalCategories[0]);
+                                  setAdditionalCategories(additionalCategories.slice(1));
+                                } else {
+                                  setCategoryId('');
+                                }
+                              } else {
+                                setAdditionalCategories(additionalCategories.filter(id => id !== opt.id));
+                              }
+                            }
+                          }}
+                        />
+                        {opt.depth > 0 && <span className="text-slate-300 dark:text-slate-600 shrink-0 select-none">↳</span>}
+                        <span className={`truncate leading-none ${opt.depth === 0 ? 'font-bold text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-400'} ${isPrimary ? '!font-bold !text-brand-700 dark:!text-brand-400' : ''}`}>
+                          {opt.name}
+                        </span>
+                      </div>
+                      {isPrimary && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/40 px-1.5 py-0.5 rounded shrink-0">
+                          Primary
+                        </span>
+                      )}
+                    </label>
+                  );
                 })}
-              </select>
+              </div>
             </div>
 
             <div>

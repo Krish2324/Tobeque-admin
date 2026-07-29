@@ -21,7 +21,7 @@ const ProductList = () => {
   const [brandFilter, setBrandFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [sortBy, setSortBy] = useState('createdAt');
@@ -75,7 +75,7 @@ const ProductList = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, search, categoryFilter, brandFilter, statusFilter, sortBy, sortDir]);
+  }, [page, limit, search, categoryFilter, brandFilter, statusFilter, sortBy, sortDir]);
 
   useEffect(() => {
     fetchFilters();
@@ -234,7 +234,7 @@ const ProductList = () => {
       </div>
 
       {/* Advanced Filters Row */}
-      <div className="glass-card p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="glass-card p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
         <div>
           <label className="form-label text-xs">Search Keywords</label>
           <div className="relative">
@@ -288,6 +288,20 @@ const ProductList = () => {
             <option value="published">Published</option>
             <option value="draft">Draft</option>
             <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="form-label text-xs">Rows Per Page</label>
+          <select
+            value={limit}
+            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+            className="form-input text-xs h-[38px] py-1 bg-slate-50 dark:bg-slate-800"
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
           </select>
         </div>
       </div>
