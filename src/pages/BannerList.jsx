@@ -26,7 +26,9 @@ const BannerList = () => {
   const [sortOrder, setSortOrder] = useState('0');
   const [status, setStatus] = useState(true);
   const [imageFile, setImageFile] = useState(null);
+  const [mobileImageFile, setMobileImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [backgroundUpload, setBackgroundUpload] = useState({ active: false, progress: 0, title: '' });
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, title: '' });
 
   const { showNotification } = useNotification();
@@ -80,6 +82,7 @@ const BannerList = () => {
       setStatus(true);
     }
     setImageFile(null);
+    setMobileImageFile(null);
     setModalOpen(true);
   };
 
@@ -104,27 +107,53 @@ const BannerList = () => {
         return;
       }
 
+      if (mobileImageFile) {
+        formData.append('mobileImage', mobileImageFile);
+      }
+
+      const token = localStorage.getItem('admin_token');
+      const bannerTitle = title || 'Promo Banner';
+
+      // Immediately close modal and show info notification
+      setModalOpen(false);
+      showNotification(`Uploading "${bannerTitle}" in the background...`, 'info');
+      setBackgroundUpload({ active: true, progress: 0, title: bannerTitle });
+
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        timeout: 300000, // 5 minutes timeout for video processing
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setBackgroundUpload({
+              active: true,
+              progress: percent,
+              title: bannerTitle
+            });
+          }
+        }
+      };
+
       let res;
       if (editingBanner) {
         const bannerId = editingBanner.id || editingBanner._id;
-        res = await api.put(`/api/banners/${bannerId}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        res = await api.put(`/api/banners/${bannerId}`, formData, config);
       } else {
-        res = await api.post('/api/banners', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        res = await api.post('/api/banners', formData, config);
       }
 
       if (res.data.success) {
-        showNotification(`Promo banner successfully saved!`, 'success');
-        setModalOpen(false);
+        showNotification(`"${bannerTitle}" successfully uploaded!`, 'success');
         fetchBanners();
       }
     } catch (err) {
       showNotification('Failed to upload banner.', 'error');
     } finally {
       setSaving(false);
+      setBackgroundUpload({ active: false, progress: 0, title: '' });
     }
   };
 
@@ -132,13 +161,47 @@ const BannerList = () => {
     try {
       const res = await api.delete(`/api/banners/${id}`);
       if (res.data.success) {
-        showNotification('Promo banner deleted successfully.', 'success');
+        showNotification(`Banner "${titleStr}" deleted successfully.`, 'success');
         fetchBanners();
       }
     } catch (err) {
       showNotification('Failed to delete banner.', 'error');
     } finally {
       setDeleteModal({ open: false, id: null, title: '' });
+    }
+  };
+
+  const handleRemoveMedia = async (type) => {
+    if (!editingBanner) return;
+    const bannerId = editingBanner.id || editingBanner._id;
+    if (!window.confirm(`Are you sure you want to delete the ${type} media? This will permanently delete it from Cloudinary.`)) return;
+
+    try {
+      const formData = new FormData();
+      if (type === 'desktop') {
+        formData.append('removeImage', 'true');
+      } else {
+        formData.append('removeMobileImage', 'true');
+      }
+
+      const token = localStorage.getItem('admin_token');
+      const res = await api.put(`/api/banners/${bannerId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (res.data.success) {
+        showNotification(`${type === 'desktop' ? 'Desktop' : 'Mobile'} media removed from Cloudinary!`, 'success');
+        setEditingBanner((prev) => ({
+          ...prev,
+          [type === 'desktop' ? 'imageUrl' : 'mobileImageUrl']: ''
+        }));
+        fetchBanners();
+      }
+    } catch (err) {
+      showNotification('Failed to remove media file.', 'error');
     }
   };
 
@@ -149,7 +212,7 @@ const BannerList = () => {
         const rawUrl = row.imageUrl ? row.imageUrl.replace(/\\/g, '/') : '';
         const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
         const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
-        
+
         return isVideo ? (
           <video
             src={mediaUrl}
@@ -207,11 +270,10 @@ const BannerList = () => {
       header: 'Visibility',
       accessor: 'status',
       cell: (row) => (
-        <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wider ${
-          row.status 
-            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-450' 
+        <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wider ${row.status
+            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-450'
             : 'bg-slate-100 text-slate-450 dark:bg-slate-800 dark:text-slate-500'
-        }`}>
+          }`}>
           {row.status ? 'Published' : 'Hidden'}
         </span>
       )
@@ -271,15 +333,15 @@ const BannerList = () => {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
                 className="absolute inset-0 w-full h-full flex flex-col justify-end p-8 md:p-12 text-white overflow-hidden"
-                style={{ 
+                style={{
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundImage: (() => {
                     const rawUrl = banners[previewIdx].imageUrl ? banners[previewIdx].imageUrl.replace(/\\/g, '/') : '';
                     const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
                     const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
-                    return isVideo 
-                      ? 'linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3))' 
+                    return isVideo
+                      ? 'linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3))'
                       : `linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3)), url(${mediaUrl})`;
                   })()
                 }}
@@ -289,10 +351,10 @@ const BannerList = () => {
                   const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
                   const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
                   return isVideo ? (
-                    <video 
-                      src={mediaUrl} 
-                      muted playsInline 
-                      className="absolute inset-0 w-full h-full object-cover -z-10" 
+                    <video
+                      src={mediaUrl}
+                      muted playsInline
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                   ) : null;
                 })()}
@@ -416,11 +478,50 @@ const BannerList = () => {
               />
             </div>
             <div>
-              <label className="form-label text-xs">Upload Slide Image/Video file</label>
+              <label className="form-label text-xs">Desktop Image/Video file</label>
+              {editingBanner && editingBanner.imageUrl && (
+                <div className="mb-2 text-[10px] text-slate-500 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  File uploaded
+                  <a href={editingBanner.imageUrl.startsWith('http') ? editingBanner.imageUrl : `/${editingBanner.imageUrl.replace(/^\/+/, '')}`} target="_blank" rel="noreferrer" className="text-brand-600 underline">View</a>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMedia('desktop')}
+                    className="text-red-500 hover:text-red-700 underline font-semibold ml-2"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
               <input
                 type="file"
                 accept="image/*,video/*"
                 onChange={(e) => setImageFile(e.target.files[0])}
+                className="form-input text-xs"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label text-xs font-bold text-teal-600 dark:text-teal-400">Mobile Image/Video (Optional)</label>
+              {editingBanner && editingBanner.mobileImageUrl && (
+                <div className="mb-2 text-[10px] text-slate-500 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  File uploaded
+                  <a href={editingBanner.mobileImageUrl.startsWith('http') ? editingBanner.mobileImageUrl : `/${editingBanner.mobileImageUrl.replace(/^\/+/, '')}`} target="_blank" rel="noreferrer" className="text-teal-600 underline">View</a>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMedia('mobile')}
+                    className="text-red-500 hover:text-red-700 underline font-semibold ml-2"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*,video/*"
+                onChange={(e) => setMobileImageFile(e.target.files[0])}
                 className="form-input text-xs"
               />
             </div>
@@ -456,6 +557,29 @@ const BannerList = () => {
         title="Delete Banner"
         message={`Are you sure you want to delete "${deleteModal.title || 'this banner'}"? This action cannot be undone.`}
       />
+      {/* Floating Background Upload Progress Widget */}
+      {backgroundUpload.active && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-slate-700 w-80 transition-all duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2.5">
+              <svg className="animate-spin h-4 w-4 text-teal-400 shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span className="text-xs font-semibold truncate max-w-[170px]">
+                Uploading: {backgroundUpload.title}
+              </span>
+            </div>
+            <span className="text-xs font-bold text-teal-400">{backgroundUpload.progress}%</span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-teal-400 h-2 rounded-full transition-all duration-200 ease-out"
+              style={{ width: `${backgroundUpload.progress}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

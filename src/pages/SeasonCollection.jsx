@@ -68,14 +68,14 @@ const SeasonCollection = () => {
   // ── Category Search ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!categorySearch.trim()) {
-      setSearchResults([]);
+      setSearchResults(allCategories);
       return;
     }
     const lowerSearch = categorySearch.toLowerCase();
     const filtered = allCategories.filter(cat =>
       cat.name?.toLowerCase().includes(lowerSearch)
     );
-    setSearchResults(filtered.slice(0, 10)); // limit to 10 results
+    setSearchResults(filtered);
   }, [categorySearch, allCategories]);
 
   // ── Add Item ─────────────────────────────────────────────────────────────
