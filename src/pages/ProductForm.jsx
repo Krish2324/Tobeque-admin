@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare, Ruler } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -92,6 +92,24 @@ const ProductForm = () => {
   const [optionsList, setOptionsList] = useState([]); // [{ name: "Color", values: ["Red", "Blue"] }]
   const [variantOptName, setVariantOptName] = useState('');
   const [variantOptVals, setVariantOptVals] = useState('');
+
+  // Size Chart State & Default Values
+  const DEFAULT_SIZE_CHART = {
+    headers: ['Size', 'Bust', 'Waist', 'Hip'],
+    rows: [
+      { Size: 'XS', Bust: '30.5', Waist: '24.5', Hip: '34' },
+      { Size: 'S', Bust: '32', Waist: '26', Hip: '35.5' },
+      { Size: 'M', Bust: '33.5', Waist: '27', Hip: '37' },
+      { Size: 'L', Bust: '35', Waist: '29', Hip: '38' },
+      { Size: 'XL', Bust: '36.5', Waist: '30.5', Hip: '40' }
+    ],
+    note: "All measurements are in inches. If you're between sizes, we recommend sizing up."
+  };
+
+  // sizeChartMode: 'disabled' | 'standard' | 'custom'
+  const [sizeChartMode, setSizeChartMode] = useState('disabled');
+  const [sizeChart, setSizeChart] = useState(DEFAULT_SIZE_CHART);
+  const [newColumnName, setNewColumnName] = useState('');
 
   // Compile flattened category options list
   const getCategoryOptions = () => {
@@ -195,6 +213,30 @@ const ProductForm = () => {
         setCallToAction(prod.callToAction || 'WhatsApp us');
         setPreFilledMessage(prod.preFilledMessage || '');
         setDisplaySettings(prod.displaySettings || 'Default');
+
+        if (prod.sizeChart) {
+          let parsed = prod.sizeChart;
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch (e) {}
+          }
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.disabled === true) {
+              setSizeChartMode('disabled');
+            } else if (parsed.isStandard === true) {
+              setSizeChartMode('standard');
+            } else if (Array.isArray(parsed.headers) && Array.isArray(parsed.rows)) {
+              setSizeChartMode('custom');
+              setSizeChart(parsed);
+            } else {
+              setSizeChartMode('standard');
+            }
+          } else {
+            setSizeChartMode('disabled');
+          }
+        } else {
+          setSizeChartMode('disabled');
+          setSizeChart(DEFAULT_SIZE_CHART);
+        }
 
         if (prod.variants && Array.isArray(prod.variants) && prod.variants.length > 0) {
           setVariantsList(prod.variants);
@@ -417,6 +459,16 @@ const ProductForm = () => {
       formData.append('displaySettings', displaySettings);
       formData.append('variants', JSON.stringify(variantsList));
       formData.append('styleItWith', JSON.stringify(styleItWith.map(p => p.id)));
+
+      let sizeChartPayload = '';
+      if (sizeChartMode === 'disabled') {
+        sizeChartPayload = JSON.stringify({ disabled: true });
+      } else if (sizeChartMode === 'standard') {
+        sizeChartPayload = JSON.stringify({ isStandard: true });
+      } else if (sizeChartMode === 'custom') {
+        sizeChartPayload = JSON.stringify(sizeChart);
+      }
+      formData.append('sizeChart', sizeChartPayload);
 
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
@@ -698,6 +750,17 @@ const ProductForm = () => {
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Click to Chat</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSettingsTab('sizeChart')}
+                  className={`flex items-center gap-2.5 px-4.5 py-3.5 text-xs font-bold tracking-wide border-b md:border-b-0 md:border-l-2 transition-all w-full text-left whitespace-nowrap ${activeSettingsTab === 'sizeChart'
+                      ? 'border-brand-600 bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400'
+                      : 'border-transparent text-slate-550 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/20'
+                    }`}
+                >
+                  <Ruler className="w-4 h-4" />
+                  <span>Size Chart</span>
                 </button>
               </div>
 
@@ -1027,6 +1090,217 @@ const ProductForm = () => {
                         ))}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Size Chart Settings Tab Content */}
+                {activeSettingsTab === 'sizeChart' && (
+                  <div className="space-y-6">
+                    <div className="pb-3 border-b border-slate-100 dark:border-slate-850">
+                      <div className="text-xs font-bold text-slate-850 dark:text-white">Product Size Guide Display</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Control whether the Size Guide button appears on the website for this product</div>
+                    </div>
+
+                    {/* Mode Selector Radio Options */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <label 
+                        onClick={() => setSizeChartMode('disabled')}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                          sizeChartMode === 'disabled'
+                            ? 'border-brand-600 bg-brand-50/20 dark:bg-brand-950/20 text-brand-700 dark:text-brand-300 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="radio"
+                            name="sizeChartMode"
+                            checked={sizeChartMode === 'disabled'}
+                            onChange={() => setSizeChartMode('disabled')}
+                            className="text-brand-600 focus:ring-brand-500"
+                          />
+                          <span className="text-xs font-bold">Hide Size Guide</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 pl-5">Do not show Size Guide button on website for this product.</p>
+                      </label>
+
+                      <label 
+                        onClick={() => setSizeChartMode('standard')}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                          sizeChartMode === 'standard'
+                            ? 'border-brand-600 bg-brand-50/20 dark:bg-brand-950/20 text-brand-700 dark:text-brand-300 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="radio"
+                            name="sizeChartMode"
+                            checked={sizeChartMode === 'standard'}
+                            onChange={() => setSizeChartMode('standard')}
+                            className="text-brand-600 focus:ring-brand-500"
+                          />
+                          <span className="text-xs font-bold">Standard Size Guide</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 pl-5">Show store's standard size guide modal.</p>
+                      </label>
+
+                      <label 
+                        onClick={() => setSizeChartMode('custom')}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                          sizeChartMode === 'custom'
+                            ? 'border-brand-600 bg-brand-50/20 dark:bg-brand-950/20 text-brand-700 dark:text-brand-300 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="radio"
+                            name="sizeChartMode"
+                            checked={sizeChartMode === 'custom'}
+                            onChange={() => setSizeChartMode('custom')}
+                            className="text-brand-600 focus:ring-brand-500"
+                          />
+                          <span className="text-xs font-bold">Custom Size Chart</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 pl-5">Customize exact columns & rows for this product.</p>
+                      </label>
+                    </div>
+
+                    {sizeChartMode === 'custom' && (
+                      <div className="space-y-5 pt-2">
+                        {/* Column Manager */}
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                          <input
+                            type="text"
+                            placeholder="Add Column (e.g. Chest, Shoulder, Length)"
+                            value={newColumnName}
+                            onChange={(e) => setNewColumnName(e.target.value)}
+                            className="form-input text-xs flex-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!newColumnName.trim()) return;
+                              const col = newColumnName.trim();
+                              if (sizeChart.headers.includes(col)) return;
+                              const newHeaders = [...sizeChart.headers, col];
+                              const newRows = sizeChart.rows.map(r => ({ ...r, [col]: '' }));
+                              setSizeChart({ ...sizeChart, headers: newHeaders, rows: newRows });
+                              setNewColumnName('');
+                            }}
+                            className="px-3.5 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold hover:bg-brand-700 transition-colors flex items-center gap-1 shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Column
+                          </button>
+                        </div>
+
+                        {/* Editable Size Chart Table */}
+                        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-slate-100/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[10px]">
+                              <tr>
+                                {sizeChart.headers.map((header, hIdx) => (
+                                  <th key={hIdx} className="px-3.5 py-3 border-b border-slate-200 dark:border-slate-800 relative group">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span>{header}</span>
+                                      {sizeChart.headers.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newHeaders = sizeChart.headers.filter(h => h !== header);
+                                            const newRows = sizeChart.rows.map(r => {
+                                              const copy = { ...r };
+                                              delete copy[header];
+                                              return copy;
+                                            });
+                                            setSizeChart({ ...sizeChart, headers: newHeaders, rows: newRows });
+                                          }}
+                                          title={`Remove ${header} column`}
+                                          className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                                        >
+                                          ×
+                                        </button>
+                                      )}
+                                    </div>
+                                  </th>
+                                ))}
+                                <th className="px-3 py-3 border-b border-slate-200 dark:border-slate-800 text-right w-12">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                              {sizeChart.rows.map((row, rIdx) => (
+                                <tr key={rIdx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                  {sizeChart.headers.map((header, hIdx) => (
+                                    <td key={hIdx} className="px-2.5 py-2">
+                                      <input
+                                        type="text"
+                                        value={row[header] || ''}
+                                        onChange={(e) => {
+                                          const newRows = [...sizeChart.rows];
+                                          newRows[rIdx] = { ...newRows[rIdx], [header]: e.target.value };
+                                          setSizeChart({ ...sizeChart, rows: newRows });
+                                        }}
+                                        placeholder={`Value`}
+                                        className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded text-xs bg-transparent focus:border-brand-600 focus:outline-none"
+                                      />
+                                    </td>
+                                  ))}
+                                  <td className="px-3 py-2 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newRows = sizeChart.rows.filter((_, idx) => idx !== rIdx);
+                                        setSizeChart({ ...sizeChart, rows: newRows });
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
+                                      title="Remove Row"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Controls Bottom Row */}
+                        <div className="flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newRow = {};
+                              sizeChart.headers.forEach(h => { newRow[h] = ''; });
+                              setSizeChart({ ...sizeChart, rows: [...sizeChart.rows, newRow] });
+                            }}
+                            className="px-3.5 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Size Row
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setSizeChart(DEFAULT_SIZE_CHART)}
+                            className="text-xs text-brand-600 font-bold hover:underline"
+                          >
+                            Reset Default Standard Values
+                          </button>
+                        </div>
+
+                        {/* Measurement Notes / Instructions */}
+                        <div>
+                          <label className="form-label text-xs">Size Guide Note / Instruction</label>
+                          <textarea
+                            rows={2}
+                            placeholder="e.g. All measurements are in inches. If you're between sizes, we recommend sizing up."
+                            value={sizeChart.note || ''}
+                            onChange={(e) => setSizeChart({ ...sizeChart, note: e.target.value })}
+                            className="form-input text-xs resize-none"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
