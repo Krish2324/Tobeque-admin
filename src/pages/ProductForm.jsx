@@ -65,6 +65,7 @@ const ProductForm = () => {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
+  const [imageAltTag, setImageAltTag] = useState('');
   const [seoSchema, setSeoSchema] = useState('');
 
   // Settings Tab Navigation State
@@ -196,6 +197,7 @@ const ProductForm = () => {
         setSeoTitle(prod.seoTitle || '');
         setSeoDescription(prod.seoDescription || '');
         setSeoKeywords(prod.seoKeywords || '');
+        setImageAltTag(prod.imageAltTag || '');
         setSeoSchema(prod.seoSchema || '');
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
 
@@ -442,6 +444,7 @@ const ProductForm = () => {
       formData.append('seoTitle', seoTitle);
       formData.append('seoDescription', seoDescription);
       formData.append('seoKeywords', seoKeywords);
+      formData.append('imageAltTag', imageAltTag);
       formData.append('seoSchema', seoSchema);
       formData.append('countdownEvergreen', countdownEvergreen);
       formData.append('restartCountdownAfter', restartCountdownAfter);
@@ -1932,6 +1935,18 @@ const ProductForm = () => {
                 className="form-input text-xs"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">Comma separated list of search keywords.</span>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Image Alt Tag (SEO)</label>
+              <input
+                type="text"
+                placeholder="Descriptive alt text for images (e.g. Navy Blue Oversized Cotton T-Shirt)"
+                value={imageAltTag}
+                onChange={(e) => setImageAltTag(e.target.value)}
+                className="form-input text-xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">This tag will be applied to all product images to improve accessibility and SEO.</span>
             </div>
 
             <div>
