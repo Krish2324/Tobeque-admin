@@ -50,6 +50,25 @@ const ProductForm = () => {
   const [allProducts, setAllProducts] = useState([]); // Search results
   const [styleSearchQuery, setStyleSearchQuery] = useState('');
 
+  // Accordion & Custom Sections State
+  const [fabricCare, setFabricCare] = useState('');
+  const [shippingReturns, setShippingReturns] = useState('');
+  const [customSections, setCustomSections] = useState([]);
+
+  const handleAddCustomSection = () => {
+    setCustomSections([...customSections, { title: '', content: '' }]);
+  };
+
+  const handleUpdateCustomSection = (index, field, value) => {
+    const updated = [...customSections];
+    updated[index] = { ...updated[index], [field]: value };
+    setCustomSections(updated);
+  };
+
+  const handleRemoveCustomSection = (index) => {
+    setCustomSections(customSections.filter((_, idx) => idx !== index));
+  };
+
   // File Upload State
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
@@ -200,6 +219,9 @@ const ProductForm = () => {
         setImageAltTag(prod.imageAltTag || '');
         setSeoSchema(prod.seoSchema || '');
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
+        setFabricCare(prod.fabricCare || '');
+        setShippingReturns(prod.shippingReturns || '');
+        setCustomSections(Array.isArray(prod.customSections) ? prod.customSections : []);
 
         setCountdownEvergreen(prod.countdownEvergreen || false);
         setRestartCountdownAfter(prod.restartCountdownAfter || '');
@@ -462,6 +484,9 @@ const ProductForm = () => {
       formData.append('displaySettings', displaySettings);
       formData.append('variants', JSON.stringify(variantsList));
       formData.append('styleItWith', JSON.stringify(styleItWith.map(p => p.id)));
+      formData.append('fabricCare', fabricCare);
+      formData.append('shippingReturns', shippingReturns);
+      formData.append('customSections', JSON.stringify(customSections));
 
       let sizeChartPayload = '';
       if (sizeChartMode === 'disabled') {
@@ -608,9 +633,85 @@ const ProductForm = () => {
               />
             </div>
 
+            {/* Dynamic Custom Product Accordions */}
+            <div className="border-t border-slate-100 dark:border-slate-850 pt-5 mt-4 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-white">Product Accordion Sections</h4>
+                  <p className="text-xs text-slate-400">Add expandable sections (Fabric &amp; Care, Shipping &amp; Returns, Fit Guide, etc.) to appear below description</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleAddCustomSection()}
+                    className="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Accordion Section</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold">Quick add:</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomSections([...customSections, { title: 'Fabric & Care', content: '92% Polyamide, 8% Elastane. Hand wash cold.' }])}
+                  className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[11px] font-medium transition-colors"
+                >
+                  + Fabric &amp; Care
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomSections([...customSections, { title: 'Shipping & Returns', content: 'Orders processed in 1-2 business days. Returns accepted within 14 days.' }])}
+                  className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[11px] font-medium transition-colors"
+                >
+                  + Shipping &amp; Returns
+                </button>
+              </div>
+
+              {customSections.length === 0 ? (
+                <p className="text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                  No extra sections added yet. Click "+ Add Accordion Section" or use a quick preset above.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {customSections.map((sec, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 relative">
+                      <div className="flex items-center justify-between gap-3">
+                        <input
+                          type="text"
+                          placeholder="Section Title (e.g. Fabric & Care, Shipping & Returns, Size & Fit)"
+                          value={sec.title}
+                          onChange={(e) => handleUpdateCustomSection(idx, 'title', e.target.value)}
+                          className="form-input font-bold text-xs flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomSection(idx)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                          title="Remove section"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <textarea
+                        rows={2}
+                        placeholder="Section Content / Details..."
+                        value={sec.content}
+                        onChange={(e) => handleUpdateCustomSection(idx, 'content', e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Style It With - WooCommerce Style UI */}
             <div className="border-t border-slate-100 dark:border-slate-850 pt-5 mt-5">
-              <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Style It With (Related Products)</h4>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Related Products</h4>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="sm:w-[150px] shrink-0 pt-2">

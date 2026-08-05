@@ -6,10 +6,10 @@ import { useNotification } from '../context/NotificationContext';
 const AboutUsSettings = () => {
   const { showNotification } = useNotification();
   const fileInputRef = useRef(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  
+
   const [formData, setFormData] = useState({
     heroTitle: 'About Tobeque',
     heroSubtitle: 'We are passionate about fashion.',
@@ -105,7 +105,7 @@ const AboutUsSettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const data = new FormData();
       data.append('heroTitle', formData.heroTitle);
@@ -114,7 +114,7 @@ const AboutUsSettings = () => {
       data.append('visionStatement', formData.visionStatement);
       data.append('ourStoryText', formData.ourStoryText);
       data.append('stats', JSON.stringify(formData.stats));
-      
+
       if (imageFile) {
         data.append('missionImage', imageFile);
       }
@@ -255,7 +255,7 @@ const AboutUsSettings = () => {
                 </div>
               </div>
             ) : (
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="aspect-[4/3] w-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
               >
@@ -272,7 +272,7 @@ const AboutUsSettings = () => {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {formData.stats.map((stat, index) => (
                 <div key={index} className="flex gap-2 items-start relative group p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
@@ -292,8 +292,8 @@ const AboutUsSettings = () => {
                       className="form-input py-1.5 text-sm font-semibold"
                     />
                   </div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => removeStat(index)}
                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                   >

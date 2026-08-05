@@ -13,6 +13,7 @@ const Settings = () => {
   const [storeName, setStoreName] = useState('');
   const [storeEmail, setStoreEmail] = useState('');
   const [storeCurrency, setStoreCurrency] = useState('INR');
+  const [shippingReturnsText, setShippingReturnsText] = useState('');
   const [deliveryEstimateMin, setDeliveryEstimateMin] = useState('3');
   const [deliveryEstimateMax, setDeliveryEstimateMax] = useState('5');
   const [gstBrackets, setGstBrackets] = useState('0, 5, 12, 18, 28');
@@ -51,6 +52,7 @@ const Settings = () => {
         setStoreName(settings.storeName || '');
         setStoreEmail(settings.storeEmail || '');
         setStoreCurrency(settings.storeCurrency || 'INR');
+        setShippingReturnsText(settings.shippingReturnsText || 'Orders are processed within 1-2 business days. Returns accepted within 14 days of delivery.');
         setDeliveryEstimateMin(settings.deliveryEstimateMin || '3');
         setDeliveryEstimateMax(settings.deliveryEstimateMax || '5');
         setGstBrackets(settings.gstBrackets || '0, 5, 12, 18, 28');
@@ -102,6 +104,7 @@ const Settings = () => {
           storeName,
           storeEmail,
           storeCurrency,
+          shippingReturnsText,
           deliveryEstimateMin,
           deliveryEstimateMax,
           gstBrackets,
@@ -340,6 +343,17 @@ const Settings = () => {
                       className="form-input text-xs"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="form-label text-xs">Global Shipping &amp; Returns Policy</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Global shipping & returns information shown across all product pages..."
+                    value={shippingReturnsText}
+                    onChange={(e) => setShippingReturnsText(e.target.value)}
+                    className="form-input text-xs"
+                  />
+                  <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">This text will be displayed in the Shipping &amp; Returns accordion across all product pages on the website.</span>
                 </div>
                 <div>
                   <label className="form-label text-xs">Store Base Checkout Currency</label>
