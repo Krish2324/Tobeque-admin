@@ -38,8 +38,8 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
       title: 'Marketing & Content',
       items: [
         { name: 'Promo Banners', path: '/banners', icon: Image, roles: ['superadmin', 'manager'] },
+        { name: 'Promo Codes', path: '/coupons', icon: Ticket, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Season Collection', path: '/season-collection', icon: Layers, roles: ['superadmin', 'manager', 'editor'] },
-        { name: 'Categories', path: '/categories', icon: List, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Style Journal', path: '/style-journal', icon: PenTool, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'About Us', path: '/about-us', icon: Users, roles: ['superadmin', 'manager'] },
         { name: 'Contact Us', path: '/contact-us', icon: MessageSquare, roles: ['superadmin', 'manager'] },
