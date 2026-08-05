@@ -47,6 +47,7 @@ const ProductForm = () => {
   const [showFreeShipping, setShowFreeShipping] = useState(true);
   const [showCodAvailable, setShowCodAvailable] = useState(true);
   const [styleItWith, setStyleItWith] = useState([]); // array of product objects {id, name, sku, thumbnail}
+  const [relatedCategories, setRelatedCategories] = useState([]); // array of category IDs for related products
   const [allProducts, setAllProducts] = useState([]); // Search results
   const [styleSearchQuery, setStyleSearchQuery] = useState('');
 
@@ -219,6 +220,7 @@ const ProductForm = () => {
         setImageAltTag(prod.imageAltTag || '');
         setSeoSchema(prod.seoSchema || '');
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
+        setRelatedCategories(prod.relatedCategories ? prod.relatedCategories.map(c => typeof c === 'object' ? (c.id || c._id) : c) : []);
         setFabricCare(prod.fabricCare || '');
         setShippingReturns(prod.shippingReturns || '');
         setCustomSections(Array.isArray(prod.customSections) ? prod.customSections : []);
@@ -484,6 +486,7 @@ const ProductForm = () => {
       formData.append('displaySettings', displaySettings);
       formData.append('variants', JSON.stringify(variantsList));
       formData.append('styleItWith', JSON.stringify(styleItWith.map(p => p.id)));
+      formData.append('relatedCategories', JSON.stringify(relatedCategories));
       formData.append('fabricCare', fabricCare);
       formData.append('shippingReturns', shippingReturns);
       formData.append('customSections', JSON.stringify(customSections));
@@ -782,6 +785,56 @@ const ProductForm = () => {
                   </div>
                 </div>
               )}
+
+              {/* Related Placement Categories - Hierarchical Checkbox Tree UI */}
+              <div className="flex flex-col gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col gap-1 mb-1">
+                  <h5 className="text-sm font-bold text-slate-800 dark:text-white">Related Placement Categories</h5>
+                  <p className="text-xs text-slate-400">
+                    Check all categories whose products should appear as Related Products for this product.
+                  </p>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 max-h-[260px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 shadow-inner">
+                  {(() => {
+                    const flattened = getCategoryOptions();
+                    if (!flattened || flattened.length === 0) {
+                      return <div className="p-3 text-xs text-slate-400">No categories available.</div>;
+                    }
+                    return flattened.map((cat) => {
+                      const isChecked = relatedCategories.includes(cat.id);
+                      const depthPadding = cat.depth === 0 ? 'pl-3.5' : cat.depth === 1 ? 'pl-8' : 'pl-14';
+                      return (
+                        <label
+                          key={cat.id}
+                          className={`flex items-center gap-3 py-2.5 pr-4 ${depthPadding} hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors ${
+                            isChecked ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setRelatedCategories([...relatedCategories, cat.id]);
+                              } else {
+                                setRelatedCategories(relatedCategories.filter(id => id !== cat.id));
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                          />
+                          <span className={`text-xs ${
+                            cat.depth === 0 ? 'text-slate-800 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-300 font-medium'
+                          }`}>
+                            {cat.depth > 0 && <span className="text-slate-400 mr-1.5 font-normal">↳</span>}
+                            {cat.name}
+                          </span>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
             </div>
           </div>
 
