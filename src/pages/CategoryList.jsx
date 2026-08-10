@@ -3,6 +3,8 @@ import { Plus, Edit, Trash2, Folder, Image, ShieldAlert } from 'lucide-react';
 import api from '../services/api';
 import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -122,7 +124,7 @@ const CategoryList = () => {
       formData.append('googleProductCategory', catGoogleProductCategory);
       formData.append('seoTitle', catSeoTitle);
       formData.append('seoDescription', catSeoDesc);
-      formData.append('descriptionSections', JSON.stringify(catDescriptionSections.filter(s => s.title.trim() || s.content.trim())));
+      formData.append('descriptionSections', JSON.stringify(catDescriptionSections.filter(s => s.title.trim() || (s.content && s.content.replace(/<[^>]*>/g, '').trim() !== ''))));
 
       if (catImageFile) formData.append('image', catImageFile);
       if (catBannerFile) formData.append('banner', catBannerFile);
@@ -459,12 +461,12 @@ const CategoryList = () => {
 
           <div>
             <label className="form-label text-xs">Description details (Main overview)</label>
-            <textarea
-              rows={2}
-              placeholder="Short category summary overview..."
+            <ReactQuill
+              theme="snow"
               value={catDescription}
-              onChange={(e) => setCatDescription(e.target.value)}
-              className="form-input text-xs resize-none"
+              onChange={setCatDescription}
+              placeholder="Short category summary overview..."
+              className="bg-white rounded-md mb-2"
             />
           </div>
 
@@ -507,12 +509,12 @@ const CategoryList = () => {
                   onChange={(e) => handleDescriptionSectionChange(idx, 'title', e.target.value)}
                   className="form-input text-xs"
                 />
-                <textarea
-                  rows={3}
+                <ReactQuill
+                  theme="snow"
+                  value={sec.content || ''}
+                  onChange={(val) => handleDescriptionSectionChange(idx, 'content', val)}
                   placeholder={`Section ${idx + 1} Detailed description content...`}
-                  value={sec.content}
-                  onChange={(e) => handleDescriptionSectionChange(idx, 'content', e.target.value)}
-                  className="form-input text-xs resize-none"
+                  className="bg-white rounded-md mb-2 text-slate-800"
                 />
               </div>
             ))}

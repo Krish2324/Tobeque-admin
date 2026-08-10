@@ -73,6 +73,7 @@ const ProductForm = () => {
   // File Upload State
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [thumbnailColor, setThumbnailColor] = useState(''); // Color tag for primary thumbnail
   const [hotRightNowMediaFile, setHotRightNowMediaFile] = useState(null);
   const [hotRightNowMediaPreview, setHotRightNowMediaPreview] = useState('');
   const [galleryFiles, setGalleryFiles] = useState([]); // new files to upload
@@ -113,6 +114,31 @@ const ProductForm = () => {
   const [optionsList, setOptionsList] = useState([]); // [{ name: "Color", values: ["Red", "Blue"] }]
   const [variantOptName, setVariantOptName] = useState('');
   const [variantOptVals, setVariantOptVals] = useState('');
+
+  // Dynamically compute available color tags for this product from admin-added variants/options
+  const availableProductColors = React.useMemo(() => {
+    const set = new Set();
+    if (optionsList && Array.isArray(optionsList)) {
+      optionsList.forEach(opt => {
+        if (opt.name && ['color', 'colour'].includes(opt.name.toLowerCase())) {
+          if (Array.isArray(opt.values)) {
+            opt.values.forEach(v => { if (v && typeof v === 'string' && v.trim()) set.add(v.trim()); });
+          }
+        }
+      });
+    }
+    if (variantsList && Array.isArray(variantsList)) {
+      variantsList.forEach(v => {
+        const c = v.color || v.Colour || v.Color || v.colour;
+        if (c && typeof c === 'string' && c.trim()) {
+          set.add(c.trim());
+        }
+      });
+    }
+    const list = Array.from(set);
+    if (list.length > 0) return list;
+    return ['Black', 'White', 'Grey', 'Beige', 'Brown', 'Blue', 'Navy', 'Green', 'Red', 'Pink', 'Yellow', 'Orange', 'Purple'];
+  }, [optionsList, variantsList]);
 
   // Size Chart State & Default Values
   const DEFAULT_SIZE_CHART = {
@@ -208,6 +234,7 @@ const ProductForm = () => {
         setShowCodAvailable(prod.showCodAvailable !== undefined ? prod.showCodAvailable : true);
         setHotRightNowMediaPreview(prod.hotRightNowMedia || '');
         setThumbnailPreview(prod.thumbnail || '');
+        setThumbnailColor(prod.thumbnailColor || '');
         setExistingImages(prod.images || []);
         // Restore existing color map
         const colorMap = {};
@@ -487,6 +514,7 @@ const ProductForm = () => {
       formData.append('variants', JSON.stringify(variantsList));
       formData.append('styleItWith', JSON.stringify(styleItWith.map(p => p.id)));
       formData.append('relatedCategories', JSON.stringify(relatedCategories));
+      formData.append('thumbnailColor', thumbnailColor);
       formData.append('fabricCare', fabricCare);
       formData.append('shippingReturns', shippingReturns);
       formData.append('customSections', JSON.stringify(customSections));
@@ -786,7 +814,8 @@ const ProductForm = () => {
                 </div>
               )}
 
-              {/* Related Placement Categories - Hierarchical Checkbox Tree UI */}
+              {/* Related Placement Categories — temporarily hidden until feature is ready */}
+              {false && (
               <div className="flex flex-col gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col gap-1 mb-1">
                   <h5 className="text-sm font-bold text-slate-800 dark:text-white">Related Placement Categories</h5>
@@ -835,6 +864,7 @@ const ProductForm = () => {
                   })()}
                 </div>
               </div>
+              )}
             </div>
           </div>
 
@@ -1883,10 +1913,33 @@ const ProductForm = () => {
                   <input
                     type="file"
                     accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
-                    onChange={handleThumbnailChange}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      setThumbnailFile(file);
+                      setThumbnailPreview(URL.createObjectURL(file));
+                    }}
                     className="hidden"
                   />
                 </label>
+              </div>
+              {/* Thumbnail Color Tag */}
+              <div className="mt-3">
+                <label className="form-label text-xs">Thumbnail Image Color</label>
+                <p className="text-[10px] text-slate-400 mb-1.5">Tag which color this primary thumbnail belongs to (e.g. Green, Yellow). This ensures the correct images show when that color is selected.</p>
+                <select
+                  value={thumbnailColor}
+                  onChange={(e) => setThumbnailColor(e.target.value)}
+                  className="form-input text-xs h-[36px] py-1 bg-slate-50 dark:bg-slate-800"
+                >
+                  <option value="">— No color tag (always show) —</option>
+                  {availableProductColors.map((colorVal) => (
+                    <option key={colorVal} value={colorVal}>{colorVal}</option>
+                  ))}
+                  {thumbnailColor && !availableProductColors.includes(thumbnailColor) && (
+                    <option value={thumbnailColor}>{thumbnailColor}</option>
+                  )}
+                </select>
               </div>
             </div>
 
@@ -1940,13 +1993,9 @@ const ProductForm = () => {
                               className="text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-brand-500"
                             >
                               <option value="">No color tag</option>
-                              {/* Populate from Color variant option if exists */}
-                              {optionsList
-                                .find(o => o.name.toLowerCase() === 'color')
-                                ?.values.map((val, vi) => (
-                                  <option key={vi} value={val}>{val}</option>
-                                ))
-                              }
+                              {availableProductColors.map((val, vi) => (
+                                <option key={vi} value={val}>{val}</option>
+                              ))}
                             </select>
                             {galleryFileColors[idx] && (
                               <span
@@ -1999,12 +2048,9 @@ const ProductForm = () => {
                               className="text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-brand-500"
                             >
                               <option value="">No color tag</option>
-                              {optionsList
-                                .find(o => o.name.toLowerCase() === 'color')
-                                ?.values.map((val, vi) => (
-                                  <option key={vi} value={val}>{val}</option>
-                                ))
-                              }
+                              {availableProductColors.map((val, vi) => (
+                                <option key={vi} value={val}>{val}</option>
+                              ))}
                             </select>
                             {existingImageColors[img.id] && (
                               <span
