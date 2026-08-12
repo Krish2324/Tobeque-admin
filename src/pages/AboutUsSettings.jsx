@@ -16,6 +16,7 @@ const AboutUsSettings = () => {
     missionStatement: 'Our mission is to bring you the best styles.',
     visionStatement: 'To be the leading fashion destination for youth.',
     ourStoryText: 'Founded with a love for street style, Tobeque has grown into a community.',
+    ourStoryText2: '',
     stats: [
       { label: 'Happy Customers', value: '10K+' },
       { label: 'Products', value: '500+' }
@@ -40,6 +41,7 @@ const AboutUsSettings = () => {
           missionStatement: data.missionStatement,
           visionStatement: data.visionStatement,
           ourStoryText: data.ourStoryText,
+          ourStoryText2: data.ourStoryText2 || '',
           stats: data.stats || []
         });
         if (data.missionImage) {
@@ -113,6 +115,7 @@ const AboutUsSettings = () => {
       data.append('missionStatement', formData.missionStatement);
       data.append('visionStatement', formData.visionStatement);
       data.append('ourStoryText', formData.ourStoryText);
+      data.append('ourStoryText2', formData.ourStoryText2 || '');
       data.append('stats', JSON.stringify(formData.stats));
 
       if (imageFile) {
@@ -219,15 +222,29 @@ const AboutUsSettings = () => {
 
           <div className="glass-card p-6">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Our Story</h3>
-            <div>
-              <label className="form-label">Our Story Text</label>
-              <textarea
-                name="ourStoryText"
-                value={formData.ourStoryText}
-                onChange={handleChange}
-                rows={6}
-                className="form-input resize-y"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="form-label">Our Story Section 1</label>
+                <textarea
+                  name="ourStoryText"
+                  value={formData.ourStoryText}
+                  onChange={handleChange}
+                  rows={5}
+                  className="form-input resize-y"
+                  placeholder="Enter first section of Our Story..."
+                />
+              </div>
+              <div>
+                <label className="form-label">Our Story Section 2</label>
+                <textarea
+                  name="ourStoryText2"
+                  value={formData.ourStoryText2 || ''}
+                  onChange={handleChange}
+                  rows={5}
+                  className="form-input resize-y"
+                  placeholder="Enter second section of Our Story..."
+                />
+              </div>
             </div>
           </div>
         </div>

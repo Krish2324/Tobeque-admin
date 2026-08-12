@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, 4, 5, 6, false] }],
+    ['bold', 'italic', 'underline'],
+    ['link'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean']
+  ]
+};
 
 const BlogForm = () => {
   const { id } = useParams();
@@ -17,10 +29,13 @@ const BlogForm = () => {
     content: '',
     excerpt: '',
     image: '',
+    imageAltTag: '',
     status: 'draft',
     author: 'Tobeque Admin',
     seoTitle: '',
-    seoDescription: ''
+    seoDescription: '',
+    seoKeywords: '',
+    seoSchema: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -57,6 +72,13 @@ const BlogForm = () => {
     }));
   };
 
+  const handleContentChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      content: value
+    }));
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -82,6 +104,13 @@ const BlogForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const plainTextContent = formData.content ? formData.content.replace(/<[^>]*>/g, '').trim() : '';
+    if (!plainTextContent && !formData.content?.includes('<img')) {
+      showNotification('Please enter article content', 'warning');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -144,19 +173,17 @@ const BlogForm = () => {
             </div>
             
             <div>
-              <label className="form-label">Content (HTML or Text) *</label>
-              <textarea
-                name="content"
+              <label className="form-label">Article Content *</label>
+              <ReactQuill
+                theme="snow"
                 value={formData.content}
-                onChange={handleChange}
-                required
-                rows="15"
+                onChange={handleContentChange}
                 placeholder="Write your article content here..."
-                className="form-input font-mono text-sm leading-relaxed"
-              ></textarea>
-              <p className="text-xs text-slate-400 mt-2">You can use basic HTML tags for formatting (e.g., &lt;h2&gt;, &lt;p&gt;, &lt;b&gt;, &lt;img&gt;).</p>
+                modules={quillModules}
+              />
             </div>
           </div>
+
           
           {/* SEO Card */}
           <div className="glass-card p-6 space-y-5">
@@ -176,12 +203,38 @@ const BlogForm = () => {
               <label className="form-label">SEO Description</label>
               <textarea
                 name="seoDescription"
-                value={formData.seoDescription}
+                value={formData.seoDescription || ''}
                 onChange={handleChange}
                 rows="3"
                 placeholder="Meta description for search engines"
                 className="form-input"
               ></textarea>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Meta Keywords</label>
+              <input
+                type="text"
+                name="seoKeywords"
+                placeholder="e.g. style guide, summer fashion, outfit ideas"
+                value={formData.seoKeywords || ''}
+                onChange={handleChange}
+                className="form-input text-xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Comma separated list of search keywords.</span>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Schema Markup (JSON-LD Structured Data)</label>
+              <textarea
+                name="seoSchema"
+                rows={4}
+                placeholder='{"@context": "https://schema.org/", "@type": "BlogPosting", "headline": "..."}'
+                value={formData.seoSchema || ''}
+                onChange={handleChange}
+                className="form-input text-xs font-mono resize-none"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Custom JSON-LD script content inserted directly into HTML &lt;head&gt;.</span>
             </div>
           </div>
         </div>
@@ -282,13 +335,26 @@ const BlogForm = () => {
               </div>
 
               {formData.image ? (
-                <img src={formData.image} alt="Cover preview" className="w-full h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700" />
+                <img src={formData.image} alt={formData.imageAltTag || "Cover preview"} className="w-full h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700" />
               ) : (
                 <div className="w-full h-40 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400">
                   <ImageIcon className="w-8 h-8 mb-2" />
                   <span className="text-xs">No cover image</span>
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Image Alt Tag (SEO)</label>
+              <input
+                type="text"
+                name="imageAltTag"
+                value={formData.imageAltTag || ''}
+                onChange={handleChange}
+                placeholder="Descriptive alt text for cover image (e.g. Summer Fashion Trends 2026)"
+                className="form-input text-xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Improves accessibility and search engine image indexation.</span>
             </div>
 
             <div>
