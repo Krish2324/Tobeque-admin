@@ -15,8 +15,13 @@ const AboutUsSettings = () => {
     heroSubtitle: 'We are passionate about fashion.',
     missionStatement: 'Our mission is to bring you the best styles.',
     visionStatement: 'To be the leading fashion destination for youth.',
+    ourStoryTitle: 'Our Story',
     ourStoryText: 'Founded with a love for street style, Tobeque has grown into a community.',
     ourStoryText2: '',
+    extraSections: [
+      { title: 'Our Story Section 2', description: '' },
+      { title: 'Our Story Section 3', description: '' }
+    ],
     stats: [
       { label: 'Happy Customers', value: '10K+' },
       { label: 'Products', value: '500+' }
@@ -35,13 +40,22 @@ const AboutUsSettings = () => {
       const res = await api.get('/api/about-us');
       if (res.data.data) {
         const data = res.data.data;
+        const extraSectionsData = (data.extraSections && data.extraSections.length > 0)
+          ? data.extraSections
+          : [
+              { title: 'Our Story Section 2', description: data.ourStoryText2 || '' },
+              { title: 'Our Story Section 3', description: '' }
+            ];
+
         setFormData({
-          heroTitle: data.heroTitle,
-          heroSubtitle: data.heroSubtitle,
-          missionStatement: data.missionStatement,
-          visionStatement: data.visionStatement,
-          ourStoryText: data.ourStoryText,
+          heroTitle: data.heroTitle || '',
+          heroSubtitle: data.heroSubtitle || '',
+          missionStatement: data.missionStatement || '',
+          visionStatement: data.visionStatement || '',
+          ourStoryTitle: data.ourStoryTitle || 'Our Story',
+          ourStoryText: data.ourStoryText || '',
           ourStoryText2: data.ourStoryText2 || '',
+          extraSections: extraSectionsData,
           stats: data.stats || []
         });
         if (data.missionImage) {
@@ -82,6 +96,25 @@ const AboutUsSettings = () => {
     setFormData(prev => ({ ...prev, stats: newStats }));
   };
 
+  const handleExtraSectionChange = (index, field, value) => {
+    const newSections = [...formData.extraSections];
+    newSections[index][field] = value;
+    setFormData(prev => ({ ...prev, extraSections: newSections }));
+  };
+
+  const addExtraSection = () => {
+    setFormData(prev => ({
+      ...prev,
+      extraSections: [...prev.extraSections, { title: '', description: '' }]
+    }));
+  };
+
+  const removeExtraSection = (index) => {
+    const newSections = [...formData.extraSections];
+    newSections.splice(index, 1);
+    setFormData(prev => ({ ...prev, extraSections: newSections }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -114,8 +147,10 @@ const AboutUsSettings = () => {
       data.append('heroSubtitle', formData.heroSubtitle);
       data.append('missionStatement', formData.missionStatement);
       data.append('visionStatement', formData.visionStatement);
+      data.append('ourStoryTitle', formData.ourStoryTitle || 'Our Story');
       data.append('ourStoryText', formData.ourStoryText);
       data.append('ourStoryText2', formData.ourStoryText2 || '');
+      data.append('extraSections', JSON.stringify(formData.extraSections));
       data.append('stats', JSON.stringify(formData.stats));
 
       if (imageFile) {
@@ -221,32 +256,62 @@ const AboutUsSettings = () => {
           </div>
 
           <div className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Our Story</h3>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Our Story Section 1</h3>
             <div className="space-y-4">
               <div>
-                <label className="form-label">Our Story Section 1</label>
+                <label className="form-label">Section Title</label>
+                <input
+                  type="text"
+                  name="ourStoryTitle"
+                  value={formData.ourStoryTitle}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="e.g. Our Story"
+                />
+              </div>
+              <div>
+                <label className="form-label">Our Story Content</label>
                 <textarea
                   name="ourStoryText"
                   value={formData.ourStoryText}
                   onChange={handleChange}
-                  rows={5}
+                  rows={6}
                   className="form-input resize-y"
-                  placeholder="Enter first section of Our Story..."
-                />
-              </div>
-              <div>
-                <label className="form-label">Our Story Section 2</label>
-                <textarea
-                  name="ourStoryText2"
-                  value={formData.ourStoryText2 || ''}
-                  onChange={handleChange}
-                  rows={5}
-                  className="form-input resize-y"
-                  placeholder="Enter second section of Our Story..."
+                  placeholder="Enter Our Story content..."
                 />
               </div>
             </div>
           </div>
+
+          {formData.extraSections.map((sec, index) => (
+            <div key={index} className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
+                {sec.title ? sec.title : `Our Story Section ${index + 2}`}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="form-label">Section Title</label>
+                  <input
+                    type="text"
+                    placeholder={`e.g. Our Story Section ${index + 2}`}
+                    value={sec.title}
+                    onChange={(e) => handleExtraSectionChange(index, 'title', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Section Content</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Enter content for this section..."
+                    value={sec.description}
+                    onChange={(e) => handleExtraSectionChange(index, 'description', e.target.value)}
+                    className="form-input resize-y"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-6">
