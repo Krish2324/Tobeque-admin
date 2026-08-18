@@ -5,6 +5,7 @@ import api from '../services/api';
 import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import DeleteModal from '../components/DeleteModal';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const STATUS_STYLES = {
   pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -329,18 +330,31 @@ export default function RefundRequestList() {
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-3">Purchased Items</h4>
                     <div className="space-y-3">
-                      {orderDetailsModal.order.items?.map(item => (
-                        <div key={item._id} className="flex gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                          <img src={item.product?.thumbnail || 'https://via.placeholder.com/60'} alt={item.productName} className="w-14 h-14 rounded-lg object-cover" />
-                          <div className="flex-1">
-                            <p className="text-sm font-bold text-slate-800 dark:text-white line-clamp-1">{item.productName}</p>
-                            <p className="text-xs text-slate-500">Qty: {item.quantity} × ₹{item.price}</p>
+                      {orderDetailsModal.order.items?.map(item => {
+                        const rawImg = item.image || item.imageSrc || item.product?.thumbnail || item.product?.images?.[0] || '';
+                        const resolvedImg = resolveImageUrl(rawImg);
+                        const fallbackImg = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100';
+                        return (
+                          <div key={item._id || item.id} className="flex gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                            <img
+                              src={resolvedImg || fallbackImg}
+                              alt={item.productName}
+                              className="w-14 h-14 rounded-lg object-cover"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = fallbackImg;
+                              }}
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-bold text-slate-800 dark:text-white line-clamp-1">{item.productName}</p>
+                              <p className="text-xs text-slate-500">Qty: {item.quantity} × ₹{item.price}</p>
+                            </div>
+                            <div className="text-right font-bold text-slate-800 dark:text-white">
+                              ₹{item.quantity * item.price}
+                            </div>
                           </div>
-                          <div className="text-right font-bold text-slate-800 dark:text-white">
-                            ₹{item.quantity * item.price}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                   

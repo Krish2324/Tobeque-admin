@@ -5,6 +5,7 @@ import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
 import DeleteModal from '../components/DeleteModal';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -421,15 +422,24 @@ const OrderDetail = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-850/50">
-                  {order.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/10">
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={item.product?.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
-                            alt={item.productName}
-                            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 no-print flex-shrink-0"
-                          />
+                  {order.items.map((item) => {
+                    const rawImage = item.image || item.imageSrc || item.product?.thumbnail || item.product?.images?.[0] || '';
+                    const resolvedImg = resolveImageUrl(rawImage);
+                    const fallbackImg = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100';
+
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/10">
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={resolvedImg || fallbackImg}
+                              alt={item.productName}
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 no-print flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = fallbackImg;
+                              }}
+                            />
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-800 dark:text-white">{item.productName}</span>
                             {item.variantDetails && (
@@ -447,7 +457,7 @@ const OrderDetail = () => {
                         {currencySymbol}{(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </td>
                     </tr>
-                  ))}
+                  ); })}
                 </tbody>
               </table>
             </div>

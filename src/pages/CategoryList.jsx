@@ -505,10 +505,10 @@ const CategoryList = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder={`Section ${idx + 1} Title (e.g. Fit & Fabric Guide, Care Instructions)`}
+                  placeholder={`Section ${idx + 1} H2 Heading Title (e.g. Frequently Asked Questions, Fit & Fabric Guide)`}
                   value={sec.title}
                   onChange={(e) => handleDescriptionSectionChange(idx, 'title', e.target.value)}
-                  className="form-input text-xs"
+                  className="form-input text-xs font-medium"
                 />
                 <ReactQuill
                   theme="snow"
