@@ -5,6 +5,7 @@ import api from '../services/api';
 import Modal from '../components/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const SeasonCollection = () => {
   const [items, setItems] = useState([]);
@@ -202,10 +203,12 @@ const SeasonCollection = () => {
     // Return imagePreview if they just selected a new file in the modal
     if (imagePreview && (item?.id === editingItem?.id)) return imagePreview;
     
-    if (item.imageOverride) return item.imageOverride;
-    if (item.category?.image) return item.category.image;
-    if (item.category?.banner) return item.category.banner;
-    return null;
+    let raw = null;
+    if (item.imageOverride) raw = item.imageOverride;
+    else if (item.category?.image) raw = item.category.image;
+    else if (item.category?.banner) raw = item.category.banner;
+    
+    return raw ? resolveImageUrl(raw) : null;
   };
 
   const handleImageChange = (e) => {
@@ -443,7 +446,7 @@ const SeasonCollection = () => {
                     >
                       <div className="w-8 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
                         {category.image || category.banner ? (
-                          <img src={category.image || category.banner} alt="" className="w-full h-full object-cover" />
+                          <img src={resolveImageUrl(category.image || category.banner)} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Layers className="w-3 h-3 text-slate-400" />

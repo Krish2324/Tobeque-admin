@@ -5,6 +5,7 @@ import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
 import RichTextEditor from '../components/RichTextEditor';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const isVideo = (url, file) => {
   if (file && file.type) return file.type.startsWith('video/');
@@ -776,7 +777,7 @@ const ProductForm = () => {
                         if (available.length === 0) return <div className="p-3 text-sm text-slate-500">No products found.</div>;
                         return available.map(p => (
                           <div key={p.id} className="flex items-center gap-3 p-2 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer" onClick={() => { setStyleItWith([...styleItWith, { id: p.id, name: p.name, sku: p.sku, thumbnail: p.thumbnail }]); setStyleSearchQuery(''); }}>
-                            <img src={p.thumbnail ? (p.thumbnail.startsWith('http') ? p.thumbnail : `/${p.thumbnail.replace(/^\/+/, '')}`) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
+                            <img src={p.thumbnail ? resolveImageUrl(p.thumbnail) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
                             <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                               <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name}</p>
                               <span className="text-[10px] text-slate-400 whitespace-nowrap">SKU: {p.sku || 'N/A'}</span>
@@ -800,7 +801,7 @@ const ProductForm = () => {
                   <div className="flex-1 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-900/50">
                     {styleItWith.map(p => (
                       <div key={p.id} className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 last:border-b-0">
-                        <img src={p.thumbnail ? (p.thumbnail.startsWith('http') ? p.thumbnail : `/${p.thumbnail.replace(/^\/+/, '')}`) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
+                        <img src={p.thumbnail ? resolveImageUrl(p.thumbnail) : 'https://via.placeholder.com/40'} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" />
                         <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                           <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name || 'Product'}</p>
                           <span className="text-[10px] text-slate-400 whitespace-nowrap">SKU: {p.sku || 'N/A'}</span>
@@ -1791,13 +1792,13 @@ const ProductForm = () => {
                     <div className="relative">
                       {isVideo(hotRightNowMediaPreview, hotRightNowMediaFile) ? (
                         <video
-                          src={hotRightNowMediaPreview}
+                          src={resolveImageUrl(hotRightNowMediaPreview)}
                           className="w-16 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
                           autoPlay loop muted playsInline
                         />
                       ) : (
                         <img
-                          src={hotRightNowMediaPreview}
+                          src={resolveImageUrl(hotRightNowMediaPreview)}
                           alt="Hot Right Now Preview"
                           className="w-16 h-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
                         />
@@ -1884,13 +1885,13 @@ const ProductForm = () => {
                   <div className="relative">
                     {isVideo(thumbnailPreview, thumbnailFile) ? (
                       <video
-                        src={thumbnailPreview}
+                        src={resolveImageUrl(thumbnailPreview)}
                         className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
                         autoPlay loop muted playsInline
                       />
                     ) : (
                       <img
-                        src={thumbnailPreview}
+                        src={resolveImageUrl(thumbnailPreview)}
                         alt="Thumbnail Preview"
                         className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
                       />
@@ -2028,13 +2029,13 @@ const ProductForm = () => {
                         <div className="relative shrink-0">
                           {isVideo(img.imageUrl) ? (
                             <video
-                              src={img.imageUrl}
+                              src={resolveImageUrl(img.imageUrl)}
                               className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
                               autoPlay loop muted playsInline
                             />
                           ) : (
                             <img
-                              src={img.imageUrl}
+                              src={resolveImageUrl(img.imageUrl)}
                               alt="Gallery"
                               className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-850"
                             />

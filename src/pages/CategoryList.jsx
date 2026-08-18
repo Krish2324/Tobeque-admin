@@ -7,6 +7,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -263,7 +264,7 @@ const CategoryList = () => {
         >
           <div className="flex items-center gap-3 overflow-hidden">
             {cat.image ? (
-              <img src={cat.image} alt={cat.name} className="w-9 h-9 rounded-lg object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0" />
+              <img src={resolveImageUrl(cat.image)} alt={cat.name} className="w-9 h-9 rounded-lg object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0" />
             ) : (
               <div className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-650 flex items-center justify-center flex-shrink-0">
                 <Folder className="w-4.5 h-4.5" />
@@ -364,7 +365,7 @@ const CategoryList = () => {
                 <div key={b.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/50 hover:border-indigo-500/25 shadow-sm dark:bg-slate-900 dark:border-slate-800/80 transition-all">
                   <div className="flex items-center gap-3 overflow-hidden">
                     {b.logo ? (
-                      <img src={b.logo} alt={b.name} className="w-9 h-9 rounded-lg object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0" />
+                      <img src={resolveImageUrl(b.logo)} alt={b.name} className="w-9 h-9 rounded-lg object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0" />
                     ) : (
                       <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-650 flex items-center justify-center font-extrabold text-[10px] flex-shrink-0">
                         {b.name.substring(0, 2).toUpperCase()}

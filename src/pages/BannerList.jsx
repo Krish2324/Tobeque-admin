@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import DeleteModal from '../components/DeleteModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const BannerList = () => {
   const [banners, setBanners] = useState([]);
@@ -209,8 +210,7 @@ const BannerList = () => {
     {
       header: 'Slide Preview',
       cell: (row) => {
-        const rawUrl = row.imageUrl ? row.imageUrl.replace(/\\/g, '/') : '';
-        const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+        const mediaUrl = resolveImageUrl(row.imageUrl);
         const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
 
         return isVideo ? (
@@ -337,8 +337,7 @@ const BannerList = () => {
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundImage: (() => {
-                    const rawUrl = banners[previewIdx].imageUrl ? banners[previewIdx].imageUrl.replace(/\\/g, '/') : '';
-                    const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+                    const mediaUrl = resolveImageUrl(banners[previewIdx].imageUrl);
                     const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
                     return isVideo
                       ? 'linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.3))'
@@ -347,8 +346,7 @@ const BannerList = () => {
                 }}
               >
                 {(() => {
-                  const rawUrl = banners[previewIdx].imageUrl ? banners[previewIdx].imageUrl.replace(/\\/g, '/') : '';
-                  const mediaUrl = rawUrl.startsWith('http') ? rawUrl : `/${rawUrl.replace(/^\/+/, '')}`;
+                  const mediaUrl = resolveImageUrl(banners[previewIdx].imageUrl);
                   const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i) || mediaUrl.includes('/video/upload/');
                   return isVideo ? (
                     <video

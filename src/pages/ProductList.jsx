@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import DeleteModal from '../components/DeleteModal';
 
+import { resolveImageUrl } from '../utils/imageUrl';
+
 const ProductList = () => {
   const { currencySymbol } = useCurrency();
   const [products, setProducts] = useState([]);
@@ -103,18 +105,19 @@ const ProductList = () => {
       accessor: 'name',
       sortable: true,
       cell: (row) => {
-        const isVideoUrl = row.thumbnail && !!row.thumbnail.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+        const resolvedThumb = resolveImageUrl(row.thumbnail);
+        const isVideoUrl = resolvedThumb && !!resolvedThumb.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
         return (
           <div className="flex items-center gap-3">
             {isVideoUrl ? (
               <video
-                src={row.thumbnail}
+                src={resolvedThumb}
                 className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
                 autoPlay loop muted playsInline
               />
             ) : (
               <img
-                src={row.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
+                src={resolvedThumb || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
                 alt={row.name}
                 className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
               />
