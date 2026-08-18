@@ -333,16 +333,15 @@ export default function RefundRequestList() {
                       {orderDetailsModal.order.items?.map(item => {
                         const rawImg = item.image || item.imageSrc || item.product?.thumbnail || item.product?.images?.[0] || '';
                         const resolvedImg = resolveImageUrl(rawImg);
-                        const fallbackImg = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100';
                         return (
                           <div key={item._id || item.id} className="flex gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                             <img
-                              src={resolvedImg || fallbackImg}
+                              src={resolvedImg}
                               alt={item.productName}
-                              className="w-14 h-14 rounded-lg object-cover"
+                              className="w-14 h-14 rounded-lg object-cover bg-slate-100 dark:bg-slate-800"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
-                                e.currentTarget.src = fallbackImg;
+                                e.currentTarget.style.opacity = '0.3';
                               }}
                             />
                             <div className="flex-1">

@@ -13,6 +13,7 @@ import StatsCard from '../components/StatsCard';
 import { SkeletonDashboard } from '../components/Skeleton';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const Dashboard = () => {
   const { currencySymbol } = useCurrency();
@@ -193,9 +194,10 @@ const Dashboard = () => {
                 <div key={idx} className="flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5 overflow-hidden">
                     <img 
-                      src={prod.product?.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'} 
+                      src={resolveImageUrl(prod.product?.thumbnail)} 
                       alt={prod.productName} 
-                      className="w-9 h-9 rounded-xl object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0"
+                      className="w-9 h-9 rounded-xl object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0 bg-slate-100 dark:bg-slate-800"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.style.opacity = '0.3'; }}
                     />
                     <div className="flex flex-col truncate">
                       <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{prod.productName}</span>
@@ -283,9 +285,10 @@ const Dashboard = () => {
                 <div key={prod.id} className="flex items-center justify-between gap-3 text-xs p-2 rounded-xl bg-rose-500/5 border border-rose-500/10">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <img 
-                      src={prod.thumbnail || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100'} 
+                      src={resolveImageUrl(prod.thumbnail)} 
                       alt={prod.name} 
-                      className="w-9 h-9 rounded-xl object-cover flex-shrink-0"
+                      className="w-9 h-9 rounded-xl object-cover flex-shrink-0 bg-slate-100 dark:bg-slate-800"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.style.opacity = '0.3'; }}
                     />
                     <div className="flex flex-col truncate">
                       <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{prod.name}</span>

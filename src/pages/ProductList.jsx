@@ -117,9 +117,13 @@ const ProductList = () => {
               />
             ) : (
               <img
-                src={resolvedThumb || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
+                src={resolvedThumb}
                 alt={row.name}
-                className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+                className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.style.opacity = '0.3';
+                }}
               />
             )}
             <div className="flex flex-col">

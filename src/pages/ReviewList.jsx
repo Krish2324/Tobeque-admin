@@ -5,6 +5,7 @@ import Table from '../components/Table';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import DeleteModal from '../components/DeleteModal';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const ReviewList = () => {
   const [reviews, setReviews] = useState([]);
@@ -83,9 +84,10 @@ const ReviewList = () => {
       cell: (row) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.product?.thumbnail || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
+            src={resolveImageUrl(row.product?.thumbnail)}
             alt={row.product?.name}
-            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 flex-shrink-0"
+            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 flex-shrink-0 bg-slate-100 dark:bg-slate-800"
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.style.opacity = '0.3'; }}
           />
           <div className="flex flex-col text-xs truncate max-w-xs">
             <span className="font-semibold text-slate-800 dark:text-white truncate">{row.product?.name}</span>

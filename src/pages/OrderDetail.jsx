@@ -109,7 +109,15 @@ const OrderDetail = () => {
         sendEmail: confirmModal.sendEmail
       });
       if (res.data.success) {
-        showNotification(res.data.message || 'Order confirmed and tax invoice emailed!', 'success');
+        if (res.data.emailSent) {
+          showNotification(res.data.message || 'Order confirmed and tax invoice emailed!', 'success');
+        } else if (confirmModal.sendEmail) {
+          // Confirmed but email failed — show as warning
+          const reason = res.data.emailError || 'Email could not be sent';
+          showNotification(`Order confirmed. Email failed: ${reason}`, 'warning');
+        } else {
+          showNotification(res.data.message || 'Order confirmed.', 'success');
+        }
         setConfirmModal({ open: false, sendEmail: true });
         fetchOrderDetails();
       }
@@ -425,19 +433,18 @@ const OrderDetail = () => {
                   {order.items.map((item) => {
                     const rawImage = item.image || item.imageSrc || item.product?.thumbnail || item.product?.images?.[0] || '';
                     const resolvedImg = resolveImageUrl(rawImage);
-                    const fallbackImg = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100';
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/10">
                         <td className="py-4">
                           <div className="flex items-center gap-3">
                             <img
-                              src={resolvedImg || fallbackImg}
+                              src={resolvedImg}
                               alt={item.productName}
-                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 no-print flex-shrink-0"
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800 no-print flex-shrink-0 bg-slate-100 dark:bg-slate-800"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
-                                e.currentTarget.src = fallbackImg;
+                                e.currentTarget.style.opacity = '0.3';
                               }}
                             />
                           <div className="flex flex-col">
@@ -500,6 +507,12 @@ const OrderDetail = () => {
               {order.billingAddress ? (
                 <div className="text-xs text-slate-650 dark:text-slate-350 space-y-1 leading-relaxed">
                   <p className="font-bold text-slate-800 dark:text-white">{order.billingAddress.name}</p>
+                  {(order.companyName || order.companyGst) && (
+                    <div className="my-1.5 p-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg">
+                      {order.companyName && <p className="font-semibold text-indigo-900 dark:text-indigo-300">Company: {order.companyName}</p>}
+                      {order.companyGst && <p className="font-mono text-indigo-800 dark:text-indigo-400">GSTIN: {order.companyGst}</p>}
+                    </div>
+                  )}
                   <p>{order.billingAddress.street}</p>
                   <p>{order.billingAddress.city}, {order.billingAddress.state} {order.billingAddress.zip}</p>
                   <p>{order.billingAddress.country}</p>
