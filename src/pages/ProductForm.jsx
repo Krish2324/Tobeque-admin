@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Edit2, Image, Sparkles, Settings, Layers, Truck, MessageSquare, Ruler } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit2, Image as ImageIcon, Sparkles, Settings, Layers, Truck, MessageSquare, Ruler } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -115,31 +115,89 @@ const ProductForm = () => {
   const [optionsList, setOptionsList] = useState([]); // [{ name: "Color", values: ["Red", "Blue"] }]
   const [variantOptName, setVariantOptName] = useState('');
   const [variantOptVals, setVariantOptVals] = useState('');
+  const [colorSwatchesMap, setColorSwatchesMap] = useState({}); // { [colorNameLower]: { image: string, file: File | null, preview: string } }
+  const [productColors, setProductColors] = useState([]); // Custom product colors
+  const [newColorInput, setNewColorInput] = useState('');
 
-  // Dynamically compute available color tags for this product from admin-added variants/options
+  const handleSwatchFileChange = (colorName, file) => {
+    if (!file) return;
+    const k = colorName.trim().toLowerCase();
+    setColorSwatchesMap(prev => ({
+      ...prev,
+      [k]: {
+        image: '',
+        file,
+        preview: URL.createObjectURL(file)
+      }
+    }));
+  };
+
+  const handleSwatchUrlChange = (colorName, url) => {
+    const k = colorName.trim().toLowerCase();
+    setColorSwatchesMap(prev => ({
+      ...prev,
+      [k]: {
+        image: url,
+        file: null,
+        preview: url
+      }
+    }));
+  };
+
+  const handleAddCustomColor = () => {
+    const trimmed = newColorInput.trim();
+    if (!trimmed) return;
+    if (!productColors.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+      setProductColors(prev => [...prev, trimmed]);
+    }
+    setNewColorInput('');
+  };
+
+  const handleRemoveColor = (colorName) => {
+    const k = colorName.trim().toLowerCase();
+    setProductColors(prev => prev.filter(c => c.trim().toLowerCase() !== k));
+    setColorSwatchesMap(prev => {
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+  };
+
+  // Remove only the swatch image, keep the color in the list
+  const handleRemoveSwatch = (colorName) => {
+    const k = colorName.trim().toLowerCase();
+    setColorSwatchesMap(prev => {
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+  };
+
+  // Dynamically compute available color tags for this product
+  // Only use productColors (manually added) so swatches are clean and deduplicated
   const availableProductColors = React.useMemo(() => {
-    const set = new Set();
-    if (optionsList && Array.isArray(optionsList)) {
-      optionsList.forEach(opt => {
-        if (opt.name && ['color', 'colour'].includes(opt.name.toLowerCase())) {
-          if (Array.isArray(opt.values)) {
-            opt.values.forEach(v => { if (v && typeof v === 'string' && v.trim()) set.add(v.trim()); });
-          }
-        }
-      });
-    }
-    if (variantsList && Array.isArray(variantsList)) {
-      variantsList.forEach(v => {
-        const c = v.color || v.Colour || v.Color || v.colour;
+    const seen = new Set();
+    const result = [];
+    // 1. Manually added colors (highest priority)
+    if (Array.isArray(productColors)) {
+      productColors.forEach(c => {
         if (c && typeof c === 'string' && c.trim()) {
-          set.add(c.trim());
+          const key = c.trim().toLowerCase();
+          if (!seen.has(key)) { seen.add(key); result.push(c.trim()); }
         }
       });
     }
-    const list = Array.from(set);
-    if (list.length > 0) return list;
-    return ['Black', 'White', 'Grey', 'Beige', 'Brown', 'Blue', 'Navy', 'Green', 'Red', 'Pink', 'Yellow', 'Orange', 'Purple'];
-  }, [optionsList, variantsList]);
+    // 2. Colors that have swatch images but weren't manually added
+    if (colorSwatchesMap && typeof colorSwatchesMap === 'object') {
+      Object.keys(colorSwatchesMap).forEach(k => {
+        if (k && k.trim() && !seen.has(k.toLowerCase())) {
+          seen.add(k.toLowerCase());
+          result.push(k.trim());
+        }
+      });
+    }
+    return result;
+  }, [productColors, colorSwatchesMap]);
 
   // Size Chart State & Default Values
   const DEFAULT_SIZE_CHART = {
@@ -241,6 +299,25 @@ const ProductForm = () => {
         const colorMap = {};
         (prod.images || []).forEach(img => { colorMap[img.id] = img.color || ''; });
         setExistingImageColors(colorMap);
+
+        if (prod.colors && Array.isArray(prod.colors)) {
+          setProductColors(prod.colors);
+        }
+
+        if (prod.colorSwatches && Array.isArray(prod.colorSwatches)) {
+          const swMap = {};
+          prod.colorSwatches.forEach(sw => {
+            if (sw.color) {
+              const k = sw.color.trim().toLowerCase();
+              swMap[k] = {
+                image: sw.image || '',
+                file: null,
+                preview: sw.image ? resolveImageUrl(sw.image) : ''
+              };
+            }
+          });
+          setColorSwatchesMap(swMap);
+        }
         setSlug(prod.slug || '');
         setSeoTitle(prod.seoTitle || '');
         setSeoDescription(prod.seoDescription || '');
@@ -519,6 +596,29 @@ const ProductForm = () => {
       formData.append('fabricCare', fabricCare);
       formData.append('shippingReturns', shippingReturns);
       formData.append('customSections', JSON.stringify(customSections));
+      formData.append('colors', JSON.stringify(availableProductColors));
+
+      // Build color swatches payload & uploaded files
+      const swatchesPayload = [];
+      const swatchFiles = [];
+      const swatchColors = [];
+
+      Object.entries(colorSwatchesMap).forEach(([k, item]) => {
+        const origName = availableProductColors.find(c => c.trim().toLowerCase() === k) || k;
+        if (item.file) {
+          swatchFiles.push(item.file);
+          swatchColors.push(origName);
+          swatchesPayload.push({ color: origName, image: '' });
+        } else if (item.image) {
+          swatchesPayload.push({ color: origName, image: item.image });
+        }
+      });
+
+      formData.append('colorSwatches', JSON.stringify(swatchesPayload));
+      for (let i = 0; i < swatchFiles.length; i++) {
+        formData.append('colorSwatchImages', swatchFiles[i]);
+      }
+      formData.append('colorSwatchColors', JSON.stringify(swatchColors));
 
       let sizeChartPayload = '';
       if (sizeChartMode === 'disabled') {
@@ -780,7 +880,7 @@ const ProductForm = () => {
                             {p.thumbnail ? (
                               <img src={resolveImageUrl(p.thumbnail)} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" onError={(e) => { e.currentTarget.style.opacity = '0.3'; }} />
                             ) : (
-                              <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 shrink-0 flex items-center justify-center text-slate-400"><Image className="w-4 h-4" /></div>
+                              <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 shrink-0 flex items-center justify-center text-slate-400"><ImageIcon className="w-4 h-4" /></div>
                             )}
                             <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                               <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name}</p>
@@ -808,7 +908,7 @@ const ProductForm = () => {
                         {p.thumbnail ? (
                           <img src={resolveImageUrl(p.thumbnail)} alt={p.name} className="w-8 h-8 object-cover rounded bg-slate-100 shrink-0" onError={(e) => { e.currentTarget.style.opacity = '0.3'; }} />
                         ) : (
-                          <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 shrink-0 flex items-center justify-center text-slate-400"><Image className="w-4 h-4" /></div>
+                          <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 shrink-0 flex items-center justify-center text-slate-400"><ImageIcon className="w-4 h-4" /></div>
                         )}
                         <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                           <p className="text-sm text-slate-700 dark:text-slate-300 truncate pr-2">{p.name || 'Product'}</p>
@@ -1657,6 +1757,133 @@ const ProductForm = () => {
               </div>
             )}
           </div>
+
+          {/* Color Swatches */}
+          <div className="glass-card p-6 space-y-5">
+            {/* Header */}
+            <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Product Color Swatches</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Add color names and optionally upload a texture/fabric image. If no image is uploaded, the color name is used as the background.</p>
+            </div>
+
+            {/* How it works hint */}
+            <div className="flex gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/40">
+              <div className="shrink-0 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold">i</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">How it works</p>
+                <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5 leading-relaxed">
+                  Type a color name (e.g. <strong>Red</strong>, <strong>Leopard Print</strong>, <strong>Floral Blue</strong>) and click Add. Then optionally upload a texture photo — this image will appear as the circular swatch on the website instead of a plain color.
+                </p>
+              </div>
+            </div>
+
+            {/* Add color input */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Enter color name (e.g. Red, Navy, Leopard Print)..."
+                  value={newColorInput}
+                  onChange={(e) => setNewColorInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomColor(); } }}
+                  className="form-input text-sm w-full pl-4 pr-4"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAddCustomColor}
+                className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add
+              </button>
+            </div>
+
+            {/* Color List */}
+            {availableProductColors.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 bg-slate-50 dark:bg-slate-900/30 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <ImageIcon className="w-5 h-5 text-slate-400" />
+                </div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No colors added yet</p>
+                <p className="text-xs text-slate-400 mt-1">Type a color name above and click Add</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {availableProductColors.map((colorName) => {
+                  const k = colorName.trim().toLowerCase();
+                  const swatchInfo = colorSwatchesMap[k] || { image: '', file: null, preview: '' };
+                  const hasImage = !!(swatchInfo.preview || swatchInfo.image);
+
+                  return (
+                    <div key={colorName} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-brand-700 transition-colors group">
+                      {/* Swatch circle preview */}
+                      <div className="relative shrink-0">
+                        <div className="w-11 h-11 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex items-center justify-center bg-white dark:bg-slate-800">
+                          {hasImage ? (
+                            <img src={swatchInfo.preview || resolveImageUrl(swatchInfo.image)} alt={colorName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="w-full h-full block" style={{ backgroundColor: k }} />
+                          )}
+                        </div>
+                        {hasImage && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                            <span className="text-white text-[8px] font-bold">✓</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Color name + status */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{colorName}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {hasImage ? '✓ Texture image uploaded — will show as swatch' : 'No image — will show as plain color circle'}
+                        </p>
+                      </div>
+
+                      {/* Upload image button */}
+                      <label className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-700 rounded-lg cursor-pointer transition-colors text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>{hasImage ? 'Change Image' : 'Upload Image'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => { if (e.target.files[0]) handleSwatchFileChange(colorName, e.target.files[0]); }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Remove swatch image */}
+                      {hasImage && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSwatch(colorName)}
+                          className="shrink-0 p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-lg transition-colors cursor-pointer"
+                          title="Remove texture image (keep color)"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {/* Remove color entirely */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveColor(colorName)}
+                        className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                        title="Remove this color"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Sidebar Column */}
@@ -1825,7 +2052,7 @@ const ProductForm = () => {
                     </div>
                   ) : (
                     <div className="w-16 h-24 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
-                      <Image className="w-6 h-6" />
+                      <ImageIcon className="w-6 h-6" />
                     </div>
                   )}
                   <label className="btn-secondary text-xs cursor-pointer py-2 px-3 border border-slate-200 dark:border-slate-700">
@@ -1922,7 +2149,7 @@ const ProductForm = () => {
                   </div>
                 ) : (
                   <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
-                    <Image className="w-6 h-6" />
+                    <ImageIcon className="w-6 h-6" />
                   </div>
                 )}
                 <label className="btn-secondary text-xs cursor-pointer py-2 px-3 border border-slate-200 dark:border-slate-700">
