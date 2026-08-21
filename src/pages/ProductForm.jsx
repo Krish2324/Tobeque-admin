@@ -147,9 +147,55 @@ const ProductForm = () => {
   const handleAddCustomColor = () => {
     const trimmed = newColorInput.trim();
     if (!trimmed) return;
+    
+    // Add to productColors
     if (!productColors.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
       setProductColors(prev => [...prev, trimmed]);
     }
+
+    // Sync with optionsList if a Color option exists (or if other options exist)
+    const colorOptIndex = optionsList.findIndex(o => ['color', 'colour', 'colors', 'colours'].includes(o.name.toLowerCase()));
+    
+    let newOptions = [...optionsList];
+    if (colorOptIndex !== -1) {
+      const existingOpt = newOptions[colorOptIndex];
+      if (!existingOpt.values.some(v => v.toLowerCase() === trimmed.toLowerCase())) {
+        newOptions[colorOptIndex] = { ...existingOpt, values: [...existingOpt.values, trimmed] };
+        setOptionsList(newOptions);
+        
+        // Regenerate variants combinations with new color!
+        const combos = generateCombinations(newOptions);
+        const newVariants = combos.map((combo) => {
+          const suffix = Object.values(combo).map(val => val.toString().toUpperCase().substring(0, 3)).join('-');
+          const existingMatch = variantsList.find(v => Object.keys(combo).every(k => v[k] === combo[k]));
+          return {
+            ...combo,
+            sku: existingMatch?.sku || (sku ? `${sku}-${suffix}` : `SKU-${suffix}`),
+            price: existingMatch?.price ?? (price ? parseFloat(price) : 0.00),
+            stock: existingMatch?.stock ?? 0
+          };
+        });
+        setVariantsList(newVariants);
+      }
+    } else if (optionsList.length > 0) {
+      // Create a Color option parameter automatically if other options exist (e.g. Size)
+      const colorOpt = { name: 'Color', values: [trimmed] };
+      newOptions = [...optionsList, colorOpt];
+      setOptionsList(newOptions);
+
+      const combos = generateCombinations(newOptions);
+      const newVariants = combos.map((combo) => {
+        const suffix = Object.values(combo).map(val => val.toString().toUpperCase().substring(0, 3)).join('-');
+        return {
+          ...combo,
+          sku: sku ? `${sku}-${suffix}` : `SKU-${suffix}`,
+          price: price ? parseFloat(price) : 0.00,
+          stock: 0
+        };
+      });
+      setVariantsList(newVariants);
+    }
+
     setNewColorInput('');
   };
 
@@ -161,6 +207,32 @@ const ProductForm = () => {
       delete next[k];
       return next;
     });
+
+    // Also update optionsList if Color option contains this color
+    const colorOptIndex = optionsList.findIndex(o => ['color', 'colour', 'colors', 'colours'].includes(o.name.toLowerCase()));
+    if (colorOptIndex !== -1) {
+      const existingOpt = optionsList[colorOptIndex];
+      const newVals = existingOpt.values.filter(v => v.trim().toLowerCase() !== k);
+      let newOptions = [...optionsList];
+      if (newVals.length > 0) {
+        newOptions[colorOptIndex] = { ...existingOpt, values: newVals };
+      } else {
+        newOptions = newOptions.filter((_, i) => i !== colorOptIndex);
+      }
+      setOptionsList(newOptions);
+
+      const combos = generateCombinations(newOptions);
+      const newVariants = combos.map((combo) => {
+        const suffix = Object.values(combo).map(val => val.toString().toUpperCase().substring(0, 3)).join('-');
+        return {
+          ...combo,
+          sku: sku ? `${sku}-${suffix}` : `SKU-${suffix}`,
+          price: price ? parseFloat(price) : 0.00,
+          stock: 0
+        };
+      });
+      setVariantsList(newVariants);
+    }
   };
 
   // Remove only the swatch image, keep the color in the list
@@ -174,30 +246,56 @@ const ProductForm = () => {
   };
 
   // Dynamically compute available color tags for this product
-  // Only use productColors (manually added) so swatches are clean and deduplicated
   const availableProductColors = React.useMemo(() => {
     const seen = new Set();
     const result = [];
-    // 1. Manually added colors (highest priority)
-    if (Array.isArray(productColors)) {
-      productColors.forEach(c => {
-        if (c && typeof c === 'string' && c.trim()) {
-          const key = c.trim().toLowerCase();
-          if (!seen.has(key)) { seen.add(key); result.push(c.trim()); }
+
+    const addCol = (c) => {
+      if (c && typeof c === 'string' && c.trim()) {
+        const key = c.trim().toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(c.trim());
+        }
+      }
+    };
+
+    // 1. Colors from optionsList (Product Variants Selector) if option is Color/Colour
+    if (Array.isArray(optionsList)) {
+      optionsList.forEach(opt => {
+        if (opt.name && ['color', 'colour', 'colors', 'colours'].includes(opt.name.trim().toLowerCase())) {
+          if (Array.isArray(opt.values)) {
+            opt.values.forEach(addCol);
+          }
         }
       });
     }
-    // 2. Colors that have swatch images but weren't manually added
+
+    // 2. Manually added colors (highest priority)
+    if (Array.isArray(productColors)) {
+      productColors.forEach(addCol);
+    }
+
+    // 3. Colors from variants list
+    if (Array.isArray(variantsList)) {
+      variantsList.forEach(v => {
+        Object.keys(v).forEach(k => {
+          if (['color', 'colour'].includes(k.toLowerCase())) {
+            addCol(v[k]);
+          }
+        });
+      });
+    }
+
+    // 4. Colors that have swatch images
     if (colorSwatchesMap && typeof colorSwatchesMap === 'object') {
       Object.keys(colorSwatchesMap).forEach(k => {
-        if (k && k.trim() && !seen.has(k.toLowerCase())) {
-          seen.add(k.toLowerCase());
-          result.push(k.trim());
-        }
+        addCol(k);
       });
     }
+
     return result;
-  }, [productColors, colorSwatchesMap]);
+  }, [productColors, optionsList, variantsList, colorSwatchesMap]);
 
   // Size Chart State & Default Values
   const DEFAULT_SIZE_CHART = {
@@ -495,6 +593,16 @@ const ProductForm = () => {
 
     const newOptions = [...optionsList, { name: optionNameTrimmed, values: vals }];
     setOptionsList(newOptions);
+
+    // If adding a Color option, sync values to productColors so swatches & image tags get updated
+    if (['color', 'colour', 'colors', 'colours'].includes(optionNameTrimmed.toLowerCase())) {
+      vals.forEach(v => {
+        if (v && !productColors.some(c => c.toLowerCase() === v.toLowerCase())) {
+          setProductColors(prev => [...prev, v]);
+        }
+      });
+    }
+
     setVariantOptName('');
     setVariantOptVals('');
 
@@ -513,8 +621,16 @@ const ProductForm = () => {
   };
 
   const handleRemoveOption = (idx) => {
+    const removedOpt = optionsList[idx];
     const newOptions = optionsList.filter((_, i) => i !== idx);
     setOptionsList(newOptions);
+
+    if (removedOpt && ['color', 'colour', 'colors', 'colours'].includes(removedOpt.name.toLowerCase())) {
+      if (removedOpt.values) {
+        const remKeys = removedOpt.values.map(v => v.trim().toLowerCase());
+        setProductColors(prev => prev.filter(c => !remKeys.includes(c.trim().toLowerCase())));
+      }
+    }
 
     const combos = generateCombinations(newOptions);
     const newVariants = combos.map((combo) => {
@@ -1653,7 +1769,7 @@ const ProductForm = () => {
             {/* Inputs form */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <div className="sm:col-span-1">
-                <label className="form-label text-xs">Option Name (e.g. Size, Color)</label>
+                <label className="form-label text-xs">Option Name (e.g. Size)</label>
                 <input
                   type="text"
                   placeholder="EX: Size"

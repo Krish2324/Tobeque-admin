@@ -5,6 +5,7 @@ import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import Table from '../components/Table';
 import DeleteModal from '../components/DeleteModal';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const BlogList = () => {
   const [blogs, setBlogs] = useState([]);
@@ -63,7 +64,7 @@ const BlogList = () => {
       cell: (row) => (
         <div className="flex items-center gap-3">
           {row.image ? (
-            <img src={row.image} alt={row.title} className="w-12 h-12 rounded object-cover" />
+            <img src={resolveImageUrl(row.image)} alt={row.title} className="w-12 h-12 rounded object-cover" />
           ) : (
             <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-slate-400" />

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon, Trash2 } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const quillModules = {
   toolbar: [
@@ -325,7 +326,7 @@ const BlogForm = () => {
                 </div>
                 <div className="text-center text-xs text-slate-400 font-semibold uppercase tracking-widest my-1">OR</div>
                 <input
-                  type="url"
+                  type="text"
                   name="image"
                   value={formData.image}
                   onChange={handleChange}
@@ -335,7 +336,19 @@ const BlogForm = () => {
               </div>
 
               {formData.image ? (
-                <img src={formData.image} alt={formData.imageAltTag || "Cover preview"} className="w-full h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700" />
+                <div className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                  <img src={resolveImageUrl(formData.image)} alt={formData.imageAltTag || "Cover preview"} className="w-full h-40 object-cover" />
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-lg text-xs font-semibold flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove Image
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="w-full h-40 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400">
                   <ImageIcon className="w-8 h-8 mb-2" />

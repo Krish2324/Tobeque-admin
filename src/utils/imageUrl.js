@@ -26,11 +26,13 @@ export const resolveImageUrl = (path) => {
 
   let apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
-  // Smart fallback for production hostinger domains if VITE_API_URL was not set during build
-  if (!apiBase && typeof window !== 'undefined') {
+  // Smart fallback for production hostinger domains if VITE_API_URL was not set or points to localhost
+  if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-      apiBase = 'https://backend.tobeque.com';
+      if (!apiBase || apiBase.includes('localhost') || apiBase.includes('127.0.0.1')) {
+        apiBase = 'https://backend.tobeque.com';
+      }
     }
   }
 

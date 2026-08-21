@@ -34,6 +34,12 @@ const Settings = () => {
   const [freeShippingThreshold, setFreeShippingThreshold] = useState('999');
   const [codFee, setCodFee] = useState('0');
 
+  // Shiprocket API State
+  const [shiprocketEmail, setShiprocketEmail] = useState('');
+  const [shiprocketPassword, setShiprocketPassword] = useState('');
+  const [shiprocketPickupPincode, setShiprocketPickupPincode] = useState('380015');
+  const [shiprocketPickupLocation, setShiprocketPickupLocation] = useState('Primary');
+
   // Profile update state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -65,6 +71,11 @@ const Settings = () => {
         setShippingFallbackRate(settings.shippingFallbackRate || '80');
         setFreeShippingThreshold(settings.freeShippingThreshold || '999');
         setCodFee(settings.codFee || '0');
+
+        setShiprocketEmail(settings.shiprocketEmail || '');
+        setShiprocketPassword(settings.shiprocketPassword || '');
+        setShiprocketPickupPincode(settings.shiprocketPickupPincode || '380015');
+        setShiprocketPickupLocation(settings.shiprocketPickupLocation || 'Primary');
       }
 
       if (admin) {
@@ -116,7 +127,11 @@ const Settings = () => {
           stripeSecretKey,
           shippingFallbackRate,
           freeShippingThreshold,
-          codFee
+          codFee,
+          shiprocketEmail,
+          shiprocketPassword,
+          shiprocketPickupPincode,
+          shiprocketPickupLocation
         };
 
         const res = await api.post('/api/settings', payload);
@@ -287,6 +302,59 @@ const Settings = () => {
                       className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">Extra fee added on top of the shipping cost when the customer selects Cash on Delivery. Set to 0 to disable.</span>
+                  </div>
+                </div>
+
+                {/* Shiprocket API Credentials */}
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-850">
+                  <h4 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-orange-500" />
+                    Shiprocket API Credentials & Pickup Address
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Configure your Shiprocket seller account credentials below to enable 1-click order pushing, courier assignment, AWB generation, and shipment tracking.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label text-xs">Shiprocket Account Email</label>
+                      <input
+                        type="email"
+                        placeholder="care@tobeque.com or user@domain.com"
+                        value={shiprocketEmail}
+                        onChange={(e) => setShiprocketEmail(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Shiprocket Account Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={shiprocketPassword}
+                        onChange={(e) => setShiprocketPassword(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Pickup Pincode</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 380015"
+                        value={shiprocketPickupPincode}
+                        onChange={(e) => setShiprocketPickupPincode(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Pickup Location Name (as in Shiprocket panel)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Primary or Work"
+                        value={shiprocketPickupLocation}
+                        onChange={(e) => setShiprocketPickupLocation(e.target.value)}
+                        className="form-input text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
 
