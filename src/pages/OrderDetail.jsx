@@ -148,9 +148,14 @@ const OrderDetail = () => {
   };
 
   const pushToShiprocket = () => handleSrAction('push', async () => {
-    const res = await api.post(`/api/shipping/orders/${id}/push`);
-    if (res.data.success) showNotification(res.data.message, 'success');
-    else showNotification(res.data.error || 'Push failed', 'error');
+    try {
+      const res = await api.post(`/api/shipping/orders/${id}/push`);
+      if (res.data.success) showNotification(res.data.message, 'success');
+      else showNotification(res.data.error || 'Push failed', 'error');
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Push to Shiprocket failed';
+      showNotification(msg, 'error');
+    }
   });
 
   const assignCourier = () => handleSrAction('assign', async () => {

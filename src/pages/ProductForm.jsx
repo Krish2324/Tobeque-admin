@@ -2305,18 +2305,32 @@ const ProductForm = () => {
 
             {/* Multi Gallery Images */}
             <div>
-              <label className="form-label">Gallery Slides Images</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="form-label mb-0">Gallery Slides Images</label>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  {galleryFiles.length}/25 selected
+                </span>
+              </div>
               <input
                 type="file"
                 multiple
                 accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
                 onChange={(e) => {
-                  const files = [...e.target.files];
-                  setGalleryFiles(prev => [...prev, ...files]);
+                  const incoming = [...e.target.files];
+                  setGalleryFiles(prev => {
+                    const combined = [...prev, ...incoming];
+                    if (combined.length > 25) {
+                      showNotification('Maximum 25 images allowed per product. Extra files were ignored.', 'warning');
+                      return combined.slice(0, 25);
+                    }
+                    return combined;
+                  });
+                  e.target.value = ''; // allow re-selecting same file
                 }}
                 className="form-input text-xs"
               />
               {galleryFiles.length > 0 && (
+
                 <div className="mt-3 space-y-2">
                   <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold block">
                     {galleryFiles.length} file(s) — assign a color to each for image swap on website

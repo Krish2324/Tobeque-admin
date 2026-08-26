@@ -190,26 +190,45 @@ const Dashboard = () => {
             {topProducts.length === 0 ? (
               <div className="text-center py-8 text-xs font-semibold text-slate-400">No popular sales catalog items yet.</div>
             ) : (
-              topProducts.map((prod, idx) => (
-                <div key={idx} className="flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <img 
-                      src={resolveImageUrl(prod.product?.thumbnail)} 
-                      alt={prod.productName} 
-                      className="w-9 h-9 rounded-xl object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0 bg-slate-100 dark:bg-slate-800"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.style.opacity = '0.3'; }}
-                    />
-                    <div className="flex flex-col truncate">
-                      <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{prod.productName}</span>
-                      <span className="text-[10px] text-slate-450 dark:text-slate-400 uppercase font-bold tracking-wider">{prod.sku}</span>
+              topProducts.map((prod, idx) => {
+                const thumbUrl = prod.product?.thumbnail ? resolveImageUrl(prod.product.thumbnail) : null;
+                const initials = (prod.productName || '?').slice(0, 2).toUpperCase();
+                const palette = ['bg-violet-500','bg-indigo-500','bg-sky-500','bg-emerald-500','bg-amber-500'];
+                const colorClass = palette[idx % palette.length];
+                return (
+                  <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      {thumbUrl ? (
+                        <img
+                          src={thumbUrl}
+                          alt={prod.productName}
+                          className="w-9 h-9 rounded-xl object-cover border border-slate-100 dark:border-slate-800 flex-shrink-0 bg-slate-100 dark:bg-slate-800"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = 'none';
+                            const el = e.currentTarget.nextElementSibling;
+                            if (el) el.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-9 h-9 rounded-xl flex-shrink-0 ${colorClass} flex items-center justify-center text-white text-[10px] font-extrabold`}
+                        style={{ display: thumbUrl ? 'none' : 'flex' }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="flex flex-col truncate">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{prod.productName}</span>
+                        <span className="text-[10px] text-slate-450 dark:text-slate-400 uppercase font-bold tracking-wider">{prod.sku}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="font-extrabold text-slate-800 dark:text-white">{prod.totalSold} sold</span>
+                      <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold">{currencySymbol}{parseFloat(prod.totalRevenue).toLocaleString()} rev</span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end flex-shrink-0">
-                    <span className="font-extrabold text-slate-800 dark:text-white">{prod.totalSold} sold</span>
-                    <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold">{currencySymbol}{parseFloat(prod.totalRevenue).toLocaleString()} rev</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
           
