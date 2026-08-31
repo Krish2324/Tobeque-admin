@@ -762,7 +762,16 @@ const ProductForm = () => {
 
       // Patch color on existing images if any changed
       if (isEdit && Object.keys(existingImageColors).length > 0) {
-        formData.append('existingImageColors', JSON.stringify(existingImageColors));
+        // Strip out any ghost colors before saving
+        const validExistingColors = {};
+        Object.entries(existingImageColors).forEach(([imgId, col]) => {
+          if (col && availableProductColors.includes(col)) {
+            validExistingColors[imgId] = col;
+          } else {
+            validExistingColors[imgId] = ''; // clear the ghost color
+          }
+        });
+        formData.append('existingImageColors', JSON.stringify(validExistingColors));
       }
 
       let res;
@@ -2296,9 +2305,6 @@ const ProductForm = () => {
                   {availableProductColors.map((colorVal) => (
                     <option key={colorVal} value={colorVal}>{colorVal}</option>
                   ))}
-                  {thumbnailColor && !availableProductColors.includes(thumbnailColor) && (
-                    <option value={thumbnailColor}>{thumbnailColor}</option>
-                  )}
                 </select>
               </div>
             </div>
@@ -2430,7 +2436,7 @@ const ProductForm = () => {
                                 <option key={vi} value={val}>{val}</option>
                               ))}
                             </select>
-                            {existingImageColors[img.id] && (
+                            {existingImageColors[img.id] && availableProductColors.includes(existingImageColors[img.id]) && (
                               <span
                                 className="w-4 h-4 rounded-full border border-black/10 shadow-sm inline-block"
                                 style={{ backgroundColor: (existingImageColors[img.id] || '').toLowerCase() }}
