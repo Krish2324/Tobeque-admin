@@ -27,6 +27,14 @@ const CategoryList = () => {
   const [catBannerFile, setCatBannerFile] = useState(null);
   const [catSeoTitle, setCatSeoTitle] = useState('');
   const [catSeoDesc, setCatSeoDesc] = useState('');
+  const [catSeoKeywords, setCatSeoKeywords] = useState('');
+  const [catSeoSchema, setCatSeoSchema] = useState('');
+  const [catTwitterTitle, setCatTwitterTitle] = useState('');
+  const [catTwitterDesc, setCatTwitterDesc] = useState('');
+  const [catTwitterImage, setCatTwitterImage] = useState('');
+  const [catOgTitle, setCatOgTitle] = useState('');
+  const [catOgDesc, setCatOgDesc] = useState('');
+  const [catOgImage, setCatOgImage] = useState('');
   const [catDescriptionSections, setCatDescriptionSections] = useState([{ title: '', content: '' }]);
   const [catSaving, setCatSaving] = useState(false);
 
@@ -76,6 +84,14 @@ const CategoryList = () => {
       setCatGoogleProductCategory(cat.googleProductCategory || '');
       setCatSeoTitle(cat.seoTitle || '');
       setCatSeoDesc(cat.seoDescription || '');
+      setCatSeoKeywords(cat.seoKeywords || '');
+      setCatSeoSchema(cat.seoSchema || '');
+      setCatTwitterTitle(cat.twitterTitle || '');
+      setCatTwitterDesc(cat.twitterDescription || '');
+      setCatTwitterImage(cat.twitterImage || '');
+      setCatOgTitle(cat.ogTitle || '');
+      setCatOgDesc(cat.ogDescription || '');
+      setCatOgImage(cat.ogImage || '');
       setCatDescriptionSections(cat.descriptionSections && cat.descriptionSections.length > 0 ? cat.descriptionSections : [{ title: '', content: '' }]);
     } else {
       setEditingCategory(null);
@@ -87,6 +103,14 @@ const CategoryList = () => {
       setCatGoogleProductCategory('');
       setCatSeoTitle('');
       setCatSeoDesc('');
+      setCatSeoKeywords('');
+      setCatSeoSchema('');
+      setCatTwitterTitle('');
+      setCatTwitterDesc('');
+      setCatTwitterImage('');
+      setCatOgTitle('');
+      setCatOgDesc('');
+      setCatOgImage('');
       setCatDescriptionSections([{ title: '', content: '' }]);
     }
     setCatImageFile(null);
@@ -125,6 +149,14 @@ const CategoryList = () => {
       formData.append('googleProductCategory', catGoogleProductCategory);
       formData.append('seoTitle', catSeoTitle);
       formData.append('seoDescription', catSeoDesc);
+      formData.append('seoKeywords', catSeoKeywords);
+      formData.append('seoSchema', catSeoSchema);
+      formData.append('twitterTitle', catTwitterTitle);
+      formData.append('twitterDescription', catTwitterDesc);
+      formData.append('twitterImage', catTwitterImage);
+      formData.append('ogTitle', catOgTitle);
+      formData.append('ogDescription', catOgDesc);
+      formData.append('ogImage', catOgImage);
       formData.append('descriptionSections', JSON.stringify(catDescriptionSections.filter(s => s.title.trim() || (s.content && s.content.replace(/<[^>]*>/g, '').trim() !== ''))));
 
       if (catImageFile) formData.append('image', catImageFile);
@@ -573,6 +605,102 @@ const CategoryList = () => {
                   placeholder="EX: Shop desktops..."
                   value={catSeoDesc}
                   onChange={(e) => setCatSeoDesc(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Meta Keywords</label>
+              <input
+                type="text"
+                placeholder="EX: fashion, girls wear, dresses"
+                value={catSeoKeywords}
+                onChange={(e) => setCatSeoKeywords(e.target.value)}
+                className="form-input text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="form-label text-xs">Schema Markup (JSON-LD)</label>
+              <textarea
+                rows={3}
+                placeholder='{"@context": "https://schema.org/", "@type": "CollectionPage", ...}'
+                value={catSeoSchema}
+                onChange={(e) => setCatSeoSchema(e.target.value)}
+                className="form-input text-xs font-mono resize-none"
+              />
+            </div>
+
+            {/* Twitter Card Meta Tags */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Twitter Card Metadata</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label text-xs">Twitter Title</label>
+                  <input
+                    type="text"
+                    placeholder="Twitter sharing title"
+                    value={catTwitterTitle}
+                    onChange={(e) => setCatTwitterTitle(e.target.value)}
+                    className="form-input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Twitter Image URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={catTwitterImage}
+                    onChange={(e) => setCatTwitterImage(e.target.value)}
+                    className="form-input text-xs"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="form-label text-xs">Twitter Description</label>
+                <input
+                  type="text"
+                  placeholder="Twitter summary description"
+                  value={catTwitterDesc}
+                  onChange={(e) => setCatTwitterDesc(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Open Graph Meta Tags */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Open Graph (OG) Metadata</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label text-xs">OG Title</label>
+                  <input
+                    type="text"
+                    placeholder="og:title headline"
+                    value={catOgTitle}
+                    onChange={(e) => setCatOgTitle(e.target.value)}
+                    className="form-input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">OG Image URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={catOgImage}
+                    onChange={(e) => setCatOgImage(e.target.value)}
+                    className="form-input text-xs"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="form-label text-xs">OG Description</label>
+                <input
+                  type="text"
+                  placeholder="og:description text"
+                  value={catOgDesc}
+                  onChange={(e) => setCatOgDesc(e.target.value)}
                   className="form-input text-xs"
                 />
               </div>

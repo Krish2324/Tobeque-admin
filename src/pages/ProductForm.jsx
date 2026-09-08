@@ -89,6 +89,12 @@ const ProductForm = () => {
   const [seoKeywords, setSeoKeywords] = useState('');
   const [imageAltTag, setImageAltTag] = useState('');
   const [seoSchema, setSeoSchema] = useState('');
+  const [twitterTitle, setTwitterTitle] = useState('');
+  const [twitterDescription, setTwitterDescription] = useState('');
+  const [twitterImage, setTwitterImage] = useState('');
+  const [ogTitle, setOgTitle] = useState('');
+  const [ogDescription, setOgDescription] = useState('');
+  const [ogImage, setOgImage] = useState('');
 
   // Settings Tab Navigation State
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
@@ -422,6 +428,12 @@ const ProductForm = () => {
         setSeoKeywords(prod.seoKeywords || '');
         setImageAltTag(prod.imageAltTag || '');
         setSeoSchema(prod.seoSchema || '');
+        setTwitterTitle(prod.twitterTitle || '');
+        setTwitterDescription(prod.twitterDescription || '');
+        setTwitterImage(prod.twitterImage || '');
+        setOgTitle(prod.ogTitle || '');
+        setOgDescription(prod.ogDescription || '');
+        setOgImage(prod.ogImage || '');
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
         setRelatedCategories(prod.relatedCategories ? prod.relatedCategories.map(c => typeof c === 'object' ? (c.id || c._id) : c) : []);
         setFabricCare(prod.fabricCare || '');
@@ -691,6 +703,12 @@ const ProductForm = () => {
       formData.append('seoKeywords', seoKeywords);
       formData.append('imageAltTag', imageAltTag);
       formData.append('seoSchema', seoSchema);
+      formData.append('twitterTitle', twitterTitle);
+      formData.append('twitterDescription', twitterDescription);
+      formData.append('twitterImage', twitterImage);
+      formData.append('ogTitle', ogTitle);
+      formData.append('ogDescription', ogDescription);
+      formData.append('ogImage', ogImage);
       formData.append('countdownEvergreen', countdownEvergreen);
       formData.append('restartCountdownAfter', restartCountdownAfter);
       formData.append('countdownTimerProfile', countdownTimerProfile);
@@ -2543,6 +2561,76 @@ const ProductForm = () => {
                 className="form-input text-xs font-mono resize-none"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">Custom JSON-LD script content inserted directly into HTML &lt;head&gt;.</span>
+            </div>
+
+            {/* Twitter Card Meta Tags */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block uppercase tracking-wider">Twitter Card Metadata</span>
+              <div>
+                <label className="form-label text-xs">Twitter Title</label>
+                <input
+                  type="text"
+                  placeholder="Custom title for Twitter sharing card"
+                  value={twitterTitle}
+                  onChange={(e) => setTwitterTitle(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
+              <div>
+                <label className="form-label text-xs">Twitter Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Custom summary description for Twitter"
+                  value={twitterDescription}
+                  onChange={(e) => setTwitterDescription(e.target.value)}
+                  className="form-input text-xs resize-none"
+                />
+              </div>
+              <div>
+                <label className="form-label text-xs">Twitter Image URL</label>
+                <input
+                  type="text"
+                  placeholder="Custom image URL for Twitter card (e.g. https://...)"
+                  value={twitterImage}
+                  onChange={(e) => setTwitterImage(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Open Graph (OG) Meta Tags */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block uppercase tracking-wider">Open Graph (Facebook / WhatsApp / LinkedIn) Metadata</span>
+              <div>
+                <label className="form-label text-xs">Open Graph (OG) Title</label>
+                <input
+                  type="text"
+                  placeholder="og:title headline for social sharing"
+                  value={ogTitle}
+                  onChange={(e) => setOgTitle(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
+              <div>
+                <label className="form-label text-xs">Open Graph (OG) Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="og:description text snippet"
+                  value={ogDescription}
+                  onChange={(e) => setOgDescription(e.target.value)}
+                  className="form-input text-xs resize-none"
+                />
+              </div>
+              <div>
+                <label className="form-label text-xs">Open Graph (OG) Image URL</label>
+                <input
+                  type="text"
+                  placeholder="og:image URL for social preview thumbnail"
+                  value={ogImage}
+                  onChange={(e) => setOgImage(e.target.value)}
+                  className="form-input text-xs"
+                />
+              </div>
             </div>
           </div>
 
