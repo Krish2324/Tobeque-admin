@@ -53,7 +53,7 @@ const CouponList = () => {
     if (coupon) {
       setEditingCoupon(coupon);
       setCode(coupon.code);
-      setType(coupon.type);
+      setType(coupon.type === 'percentage' ? 'percentage' : 'fixed');
       setDiscountValue(coupon.discountValue);
       setMinOrderAmount(coupon.minOrderAmount);
       setUsageLimit(coupon.usageLimit);
@@ -160,7 +160,7 @@ const CouponList = () => {
     {
       header: 'Min purchase',
       accessor: 'minOrderAmount',
-      cell: (row) => <span className="font-semibold text-slate-500 dark:text-slate-400">${parseFloat(row.minOrderAmount).toFixed(2)}</span>
+      cell: (row) => <span className="font-semibold text-slate-500 dark:text-slate-400">{currencySymbol}{parseFloat(row.minOrderAmount).toFixed(2)}</span>
     },
     {
       header: 'Limits',
