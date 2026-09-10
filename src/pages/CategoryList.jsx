@@ -29,12 +29,8 @@ const CategoryList = () => {
   const [catSeoDesc, setCatSeoDesc] = useState('');
   const [catSeoKeywords, setCatSeoKeywords] = useState('');
   const [catSeoSchema, setCatSeoSchema] = useState('');
-  const [catTwitterTitle, setCatTwitterTitle] = useState('');
-  const [catTwitterDesc, setCatTwitterDesc] = useState('');
-  const [catTwitterImage, setCatTwitterImage] = useState('');
-  const [catOgTitle, setCatOgTitle] = useState('');
-  const [catOgDesc, setCatOgDesc] = useState('');
-  const [catOgImage, setCatOgImage] = useState('');
+  const [catTwitterMeta, setCatTwitterMeta] = useState('');
+  const [catOgMeta, setCatOgMeta] = useState('');
   const [catDescriptionSections, setCatDescriptionSections] = useState([{ title: '', content: '' }]);
   const [catSaving, setCatSaving] = useState(false);
 
@@ -86,12 +82,35 @@ const CategoryList = () => {
       setCatSeoDesc(cat.seoDescription || '');
       setCatSeoKeywords(cat.seoKeywords || '');
       setCatSeoSchema(cat.seoSchema || '');
-      setCatTwitterTitle(cat.twitterTitle || '');
-      setCatTwitterDesc(cat.twitterDescription || '');
-      setCatTwitterImage(cat.twitterImage || '');
-      setCatOgTitle(cat.ogTitle || '');
-      setCatOgDesc(cat.ogDescription || '');
-      setCatOgImage(cat.ogImage || '');
+
+      // Load or construct Twitter Meta syntax
+      if (cat.twitterMeta) {
+        setCatTwitterMeta(cat.twitterMeta);
+      } else if (cat.twitterTitle || cat.twitterDescription || cat.twitterImage) {
+        const twitterLines = [];
+        if (cat.twitterCard) twitterLines.push(`<meta name="twitter:card" content="${cat.twitterCard}" />`);
+        if (cat.twitterTitle) twitterLines.push(`<meta name="twitter:title" content="${cat.twitterTitle}" />`);
+        if (cat.twitterDescription) twitterLines.push(`<meta name="twitter:description" content="${cat.twitterDescription}" />`);
+        if (cat.twitterImage) twitterLines.push(`<meta name="twitter:image" content="${cat.twitterImage}" />`);
+        setCatTwitterMeta(twitterLines.join('\n'));
+      } else {
+        setCatTwitterMeta('');
+      }
+
+      // Load or construct OG Meta syntax
+      if (cat.ogMeta) {
+        setCatOgMeta(cat.ogMeta);
+      } else if (cat.ogTitle || cat.ogDescription || cat.ogImage) {
+        const ogLines = [];
+        if (cat.ogTitle) ogLines.push(`<meta property="og:title" content="${cat.ogTitle}" />`);
+        if (cat.ogDescription) ogLines.push(`<meta property="og:description" content="${cat.ogDescription}" />`);
+        if (cat.ogImage) ogLines.push(`<meta property="og:image" content="${cat.ogImage}" />`);
+        if (cat.ogType) ogLines.push(`<meta property="og:type" content="${cat.ogType}" />`);
+        setCatOgMeta(ogLines.join('\n'));
+      } else {
+        setCatOgMeta('');
+      }
+
       setCatDescriptionSections(cat.descriptionSections && cat.descriptionSections.length > 0 ? cat.descriptionSections : [{ title: '', content: '' }]);
     } else {
       setEditingCategory(null);
@@ -105,12 +124,8 @@ const CategoryList = () => {
       setCatSeoDesc('');
       setCatSeoKeywords('');
       setCatSeoSchema('');
-      setCatTwitterTitle('');
-      setCatTwitterDesc('');
-      setCatTwitterImage('');
-      setCatOgTitle('');
-      setCatOgDesc('');
-      setCatOgImage('');
+      setCatTwitterMeta('');
+      setCatOgMeta('');
       setCatDescriptionSections([{ title: '', content: '' }]);
     }
     setCatImageFile(null);
@@ -128,6 +143,27 @@ const CategoryList = () => {
 
   const handleDescriptionSectionChange = (index, field, value) => {
     setCatDescriptionSections(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
+  const parseMetaFields = (htmlString) => {
+    const res = { title: '', description: '', image: '', cardOrType: '' };
+    if (!htmlString) return res;
+    const metaRegex = /<meta\s+([^>]+)>/gi;
+    let match;
+    while ((match = metaRegex.exec(htmlString)) !== null) {
+      const attrs = match[1];
+      const nameMatch = attrs.match(/(?:name|property)\s*=\s*["']([^"']+)["']/i);
+      const contentMatch = attrs.match(/content\s*=\s*["']([^"']+)["']/i);
+      if (nameMatch && contentMatch) {
+        const key = nameMatch[1].toLowerCase().trim();
+        const val = contentMatch[1];
+        if (key.includes('title')) res.title = val;
+        else if (key.includes('description')) res.description = val;
+        else if (key.includes('image')) res.image = val;
+        else if (key.includes('card') || key.includes('type')) res.cardOrType = val;
+      }
+    }
+    return res;
   };
 
   // Category Submit
@@ -151,12 +187,20 @@ const CategoryList = () => {
       formData.append('seoDescription', catSeoDesc);
       formData.append('seoKeywords', catSeoKeywords);
       formData.append('seoSchema', catSeoSchema);
-      formData.append('twitterTitle', catTwitterTitle);
-      formData.append('twitterDescription', catTwitterDesc);
-      formData.append('twitterImage', catTwitterImage);
-      formData.append('ogTitle', catOgTitle);
-      formData.append('ogDescription', catOgDesc);
-      formData.append('ogImage', catOgImage);
+
+      formData.append('twitterMeta', catTwitterMeta);
+      const parsedTwitter = parseMetaFields(catTwitterMeta);
+      if (parsedTwitter.title) formData.append('twitterTitle', parsedTwitter.title);
+      if (parsedTwitter.description) formData.append('twitterDescription', parsedTwitter.description);
+      if (parsedTwitter.image) formData.append('twitterImage', parsedTwitter.image);
+      if (parsedTwitter.cardOrType) formData.append('twitterCard', parsedTwitter.cardOrType);
+
+      formData.append('ogMeta', catOgMeta);
+      const parsedOg = parseMetaFields(catOgMeta);
+      if (parsedOg.title) formData.append('ogTitle', parsedOg.title);
+      if (parsedOg.description) formData.append('ogDescription', parsedOg.description);
+      if (parsedOg.image) formData.append('ogImage', parsedOg.image);
+      if (parsedOg.cardOrType) formData.append('ogType', parsedOg.cardOrType);
       formData.append('descriptionSections', JSON.stringify(catDescriptionSections.filter(s => s.title.trim() || (s.content && s.content.replace(/<[^>]*>/g, '').trim() !== ''))));
 
       if (catImageFile) formData.append('image', catImageFile);
@@ -634,74 +678,28 @@ const CategoryList = () => {
 
             {/* Twitter Card Meta Tags */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Twitter Card Metadata</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label text-xs">Twitter Title</label>
-                  <input
-                    type="text"
-                    placeholder="Twitter sharing title"
-                    value={catTwitterTitle}
-                    onChange={(e) => setCatTwitterTitle(e.target.value)}
-                    className="form-input text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="form-label text-xs">Twitter Image URL</label>
-                  <input
-                    type="text"
-                    placeholder="https://..."
-                    value={catTwitterImage}
-                    onChange={(e) => setCatTwitterImage(e.target.value)}
-                    className="form-input text-xs"
-                  />
-                </div>
-              </div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">TWITTER CARD METADATA</span>
               <div>
-                <label className="form-label text-xs">Twitter Description</label>
-                <input
-                  type="text"
-                  placeholder="Twitter summary description"
-                  value={catTwitterDesc}
-                  onChange={(e) => setCatTwitterDesc(e.target.value)}
-                  className="form-input text-xs"
+                <textarea
+                  rows={4}
+                  placeholder={`<meta name="twitter:card" content="summary_large_image" />\n<meta name="twitter:title" content="Twitter sharing title" />\n<meta name="twitter:description" content="Twitter summary description" />\n<meta name="twitter:image" content="https://..." />`}
+                  value={catTwitterMeta}
+                  onChange={(e) => setCatTwitterMeta(e.target.value)}
+                  className="form-input text-xs font-mono resize-y"
                 />
               </div>
             </div>
 
             {/* Open Graph Meta Tags */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Open Graph (OG) Metadata</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label text-xs">OG Title</label>
-                  <input
-                    type="text"
-                    placeholder="og:title headline"
-                    value={catOgTitle}
-                    onChange={(e) => setCatOgTitle(e.target.value)}
-                    className="form-input text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="form-label text-xs">OG Image URL</label>
-                  <input
-                    type="text"
-                    placeholder="https://..."
-                    value={catOgImage}
-                    onChange={(e) => setCatOgImage(e.target.value)}
-                    className="form-input text-xs"
-                  />
-                </div>
-              </div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">OPEN GRAPH (OG) METADATA</span>
               <div>
-                <label className="form-label text-xs">OG Description</label>
-                <input
-                  type="text"
-                  placeholder="og:description text"
-                  value={catOgDesc}
-                  onChange={(e) => setCatOgDesc(e.target.value)}
-                  className="form-input text-xs"
+                <textarea
+                  rows={4}
+                  placeholder={`<meta property="og:title" content="og:title headline" />\n<meta property="og:description" content="og:description text" />\n<meta property="og:image" content="https://..." />\n<meta property="og:type" content="website" />`}
+                  value={catOgMeta}
+                  onChange={(e) => setCatOgMeta(e.target.value)}
+                  className="form-input text-xs font-mono resize-y"
                 />
               </div>
             </div>
