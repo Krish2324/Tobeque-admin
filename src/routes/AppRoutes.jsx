@@ -30,6 +30,7 @@ import CommunityStyleList from '../pages/CommunityStyleList';
 import CommunityStyleForm from '../pages/CommunityStyleForm';
 import AboutUsSettings from '../pages/AboutUsSettings';
 import ContactUsAdmin from '../pages/ContactUsAdmin';
+import PushNotifications from '../pages/PushNotifications';
 
 const AppRoutes = () => {
   return (
@@ -115,6 +116,9 @@ const AppRoutes = () => {
         <Route path="community-styles" element={<CommunityStyleList />} />
         <Route path="community-styles/new" element={<CommunityStyleForm />} />
         <Route path="community-styles/edit/:id" element={<CommunityStyleForm />} />
+
+        {/* Push Notifications */}
+        <Route path="push-notifications" element={<PushNotifications />} />
       </Route>
 
       {/* Wildcard Fallback redirection */}

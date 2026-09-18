@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, FolderTree, ShoppingCart, Users,
   Ticket, ClipboardList, Image, Star, FileBarChart, Settings,
-  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen, FileText, Camera, PenTool, List
+  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen, FileText, Camera, PenTool, List, Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -44,6 +44,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'About Us', path: '/about-us', icon: Users, roles: ['superadmin', 'manager'] },
         { name: 'Contact Us', path: '/contact-us', icon: MessageSquare, roles: ['superadmin', 'manager'] },
         { name: 'Steal The Style', path: '/community-styles', icon: Camera, roles: ['superadmin', 'manager'] },
+        { name: 'Push Notifications', path: '/push-notifications', icon: Bell, roles: ['superadmin', 'manager'] },
       ]
     },
     {
