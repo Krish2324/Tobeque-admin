@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell, Send, Users, Tag, User, Image, Trash2, RefreshCw,
+  Bell, Send, Users, Tag, Upload, Image, Trash2, RefreshCw,
   CheckCircle2, XCircle, AlertCircle, ChevronDown, Eye, X,
-  Megaphone, BarChart2, Clock, Smartphone
+  Megaphone, BarChart2, Clock, Smartphone, Link2
 } from 'lucide-react';
+import api from '../services/api';
 import {
   sendNotification,
   getNotifications,
-  deleteNotification,
-  getCustomers
+  deleteNotification
 } from '../services/notificationService';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────────────────────────
 
 const TARGET_OPTIONS = [
   {
@@ -20,21 +20,15 @@ const TARGET_OPTIONS = [
     label: 'All Users',
     icon: Users,
     description: 'Broadcast to every user with the app installed',
-    color: 'text-violet-500'
+    disabled: false
   },
   {
     value: 'topic',
     label: 'By Topic / Segment',
     icon: Tag,
     description: 'Send to a specific user segment (e.g. Android, iOS)',
-    color: 'text-blue-500'
-  },
-  {
-    value: 'individual',
-    label: 'Individual User',
-    icon: User,
-    description: 'Pick one specific customer',
-    color: 'text-emerald-500'
+    disabled: true,
+    comingSoon: true
   }
 ];
 
@@ -224,9 +218,12 @@ const PushNotifications = () => {
   const [subtitle, setSubtitle] = useState('');
   const [body, setBody] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageMode, setImageMode] = useState('url'); // 'url' | 'upload'
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState('');
+  const imageFileRef = useRef(null);
   const [targetType, setTargetType] = useState('all');
   const [topic, setTopic] = useState('all_users');
-  const [targetUserId, setTargetUserId] = useState('');
   const [dataPayload, setDataPayload] = useState('{}');
 
   // UI state
@@ -239,13 +236,6 @@ const PushNotifications = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
-
-  // Customers
-  const [customers, setCustomers] = useState([]);
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const customerRef = useRef(null);
 
   // Stats
   const totalSent = history.filter(n => n.status === 'sent').length;
@@ -266,35 +256,41 @@ const PushNotifications = () => {
     }
   }, []);
 
-  const fetchCustomers = useCallback(async () => {
-    try {
-      const result = await getCustomers();
-      setCustomers(result.customers || result.data || []);
-    } catch (err) {
-      console.error('Error fetching customers:', err);
-    }
-  }, []);
-
   useEffect(() => {
     fetchHistory(historyPage);
   }, [fetchHistory, historyPage]);
 
-  useEffect(() => {
-    if (targetType === 'individual') {
-      fetchCustomers();
+  // Image upload handler
+  const handleImageFileUpload = async (file) => {
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      setImageUploadError('Only JPG, PNG, WEBP or GIF allowed.');
+      return;
     }
-  }, [targetType, fetchCustomers]);
-
-  // Close customer dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (customerRef.current && !customerRef.current.contains(e.target)) {
-        setCustomerDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError('Image must be under 5MB.');
+      return;
+    }
+    setImageUploading(true);
+    setImageUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await api.post('/api/banners/upload-misc', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const url = res.data?.url || res.data?.imageUrl || res.data?.path || '';
+      setImageUrl(url);
+    } catch (err) {
+      // Fallback: create a temporary object URL for preview only
+      const objectUrl = URL.createObjectURL(file);
+      setImageUrl(objectUrl);
+      setImageUploadError('Could not upload to server — using local preview. Add an upload endpoint to persist.');
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   // ─── Send handler ──────────────────────────────────────────────────────────
 
@@ -318,8 +314,7 @@ const PushNotifications = () => {
       body: body.trim(),
       imageUrl: imageUrl.trim() || null,
       targetType,
-      topic: targetType === 'topic' ? topic : targetType === 'all' ? 'all_users' : null,
-      targetUserId: targetType === 'individual' ? targetUserId : null,
+      topic: targetType === 'all' ? 'all_users' : null,
       data: parsedData
     };
 
@@ -332,9 +327,8 @@ const PushNotifications = () => {
         setSubtitle('');
         setBody('');
         setImageUrl('');
+        setImageUploadError('');
         setDataPayload('{}');
-        setSelectedCustomer(null);
-        setTargetUserId('');
         // Refresh history
         await fetchHistory(1);
         setHistoryPage(1);
@@ -360,15 +354,7 @@ const PushNotifications = () => {
     }
   };
 
-  // Filtered customers for search
-  const filteredCustomers = customers.filter(c => {
-    const q = customerSearch.toLowerCase();
-    return (
-      `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
-      (c.phone || '').includes(q) ||
-      (c.email || '').toLowerCase().includes(q)
-    );
-  });
+  // (no customer filtering needed — individual targeting removed)
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -473,24 +459,36 @@ const PushNotifications = () => {
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2.5">
                   Target Audience <span className="text-rose-500">*</span>
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {TARGET_OPTIONS.map((opt) => {
                     const Icon = opt.icon;
-                    const isSelected = targetType === opt.value;
+                    const isSelected = targetType === opt.value && !opt.disabled;
                     return (
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => setTargetType(opt.value)}
+                        disabled={opt.disabled}
+                        onClick={() => !opt.disabled && setTargetType(opt.value)}
                         className={`relative flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all duration-200 ${
-                          isSelected
+                          opt.disabled
+                            ? 'border-slate-200 dark:border-slate-700/50 opacity-60 cursor-not-allowed bg-slate-50/50 dark:bg-slate-800/20'
+                            : isSelected
                             ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 shadow-sm shadow-brand-500/10'
                             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                         }`}
                       >
-                        <div className={`flex items-center gap-2 ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                        <div className={`flex items-center gap-2 ${
+                          opt.disabled ? 'text-slate-400 dark:text-slate-500'
+                          : isSelected ? 'text-brand-600 dark:text-brand-400'
+                          : 'text-slate-600 dark:text-slate-400'
+                        }`}>
                           <Icon className="w-4 h-4" />
                           <span className="text-sm font-semibold">{opt.label}</span>
+                          {opt.comingSoon && (
+                            <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 tracking-wide uppercase">
+                              Soon
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">{opt.description}</p>
                         {isSelected && (
@@ -502,117 +500,7 @@ const PushNotifications = () => {
                 </div>
               </div>
 
-              {/* Topic Selector (if topic targetType) */}
-              <AnimatePresence>
-                {targetType === 'topic' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Select Topic <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="topic-select"
-                        value={topic}
-                        onChange={e => setTopic(e.target.value)}
-                        className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 pr-10 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors"
-                      >
-                        {TOPICS.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Individual User Selector */}
-              <AnimatePresence>
-                {targetType === 'individual' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    ref={customerRef}
-                    className="relative"
-                  >
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Select Customer <span className="text-rose-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
-                      className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
-                    >
-                      <span className={selectedCustomer ? 'text-slate-800 dark:text-slate-100 font-medium' : 'text-slate-400'}>
-                        {selectedCustomer
-                          ? `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''} — ${selectedCustomer.phone || selectedCustomer.email || ''}`
-                          : 'Search and select a customer...'}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${customerDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {customerDropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
-                        >
-                          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
-                            <input
-                              type="text"
-                              placeholder="Search by name, phone, email..."
-                              value={customerSearch}
-                              onChange={e => setCustomerSearch(e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-slate-800 dark:text-slate-100"
-                            />
-                          </div>
-                          <div className="max-h-48 overflow-y-auto">
-                            {filteredCustomers.length === 0 ? (
-                              <p className="text-center text-sm text-slate-400 py-4">No customers found</p>
-                            ) : (
-                              filteredCustomers.slice(0, 50).map(c => (
-                                <button
-                                  key={c._id || c.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCustomer(c);
-                                    setTargetUserId(c._id || c.id);
-                                    setCustomerDropdownOpen(false);
-                                    setCustomerSearch('');
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
-                                >
-                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-200 to-blue-200 dark:from-violet-900 dark:to-blue-900 flex items-center justify-center shrink-0">
-                                    <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
-                                      {(c.firstName || c.phone || '?').charAt(0).toUpperCase()}
-                                    </span>
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
-                                      {`${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unknown'}
-                                    </p>
-                                    <p className="text-xs text-slate-400 truncate">
-                                      {c.phone || c.email || 'No contact info'}
-                                      {!c.fcmToken && ' · ⚠ No FCM token'}
-                                    </p>
-                                  </div>
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* No extra panel needed — only 'all' is active for now */}
 
               {/* Title */}
               <div>
@@ -670,58 +558,157 @@ const PushNotifications = () => {
                 />
               </div>
 
-              {/* Image URL */}
+              {/* Notification Image — URL or Upload */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                   <span className="flex items-center gap-2">
                     <Image className="w-4 h-4" />
-                    Notification Image URL
+                    Notification Image
                     <span className="text-xs font-normal text-slate-400">optional — appears on Android</span>
                   </span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    id="notif-image-url"
-                    type="url"
-                    value={imageUrl}
-                    onChange={e => setImageUrl(e.target.value)}
-                    placeholder="https://backend.tobeque.com/uploads/misc/banner.jpg"
-                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors"
-                  />
-                  {imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setImageUrl('')}
-                      className="px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+
+                {/* Mode Toggle */}
+                <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => { setImageMode('url'); setImageUploadError(''); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      imageMode === 'url'
+                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    <Link2 className="w-3 h-3" />
+                    Paste URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setImageMode('upload'); setImageUploadError(''); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      imageMode === 'upload'
+                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    <Upload className="w-3 h-3" />
+                    Upload File
+                  </button>
                 </div>
-                {/* Image preview */}
+
+                {/* URL Input */}
+                <AnimatePresence mode="wait">
+                  {imageMode === 'url' && (
+                    <motion.div
+                      key="url"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex gap-2"
+                    >
+                      <input
+                        id="notif-image-url"
+                        type="url"
+                        value={imageUrl}
+                        onChange={e => setImageUrl(e.target.value)}
+                        placeholder="https://backend.tobeque.com/uploads/misc/banner.jpg"
+                        className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors"
+                      />
+                      {imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl('')}
+                          className="px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-300 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* File Upload */}
+                  {imageMode === 'upload' && (
+                    <motion.div
+                      key="upload"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <input
+                        ref={imageFileRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={e => handleImageFileUpload(e.target.files?.[0])}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => imageFileRef.current?.click()}
+                        disabled={imageUploading}
+                        className={`w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed transition-all ${
+                          imageUrl
+                            ? 'border-emerald-400 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-500/5'
+                            : 'border-slate-300 dark:border-slate-600 hover:border-brand-400 dark:hover:border-brand-500 bg-slate-50 dark:bg-slate-800/50'
+                        }`}
+                      >
+                        {imageUploading ? (
+                          <>
+                            <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-slate-500">Uploading...</span>
+                          </>
+                        ) : imageUrl ? (
+                          <>
+                            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Image ready!</span>
+                            <span className="text-xs text-slate-400">Click to replace</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-slate-400" />
+                            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Click to upload image</span>
+                            <span className="text-xs text-slate-400">JPG, PNG, WEBP or GIF · max 5MB</span>
+                          </>
+                        )}
+                      </button>
+                      {imageUploadError && (
+                        <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          {imageUploadError}
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Image preview (both modes) */}
                 <AnimatePresence>
                   {imageUrl && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mt-2"
+                      className="mt-3 relative group/img"
                     >
                       <img
                         src={imageUrl}
                         alt="Preview"
-                        className="w-full h-32 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
-                        onError={(e) => {
-                          e.target.style.opacity = '0.3';
-                          e.target.alt = 'Invalid image URL';
-                        }}
+                        className="w-full h-36 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
+                        onError={(e) => { e.target.style.opacity = '0.3'; }}
                       />
+                      <button
+                        type="button"
+                        onClick={() => { setImageUrl(''); if (imageFileRef.current) imageFileRef.current.value = ''; }}
+                        className="absolute top-2 right-2 p-1 rounded-lg bg-slate-900/60 text-white opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-rose-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Data Payload (Advanced) */}
+              {/* Data Payload (Advanced) - Hidden for now */}
+              {/*
               <details className="group">
                 <summary className="cursor-pointer text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center gap-2 select-none">
                   <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
@@ -742,6 +729,7 @@ const PushNotifications = () => {
                   />
                 </div>
               </details>
+              */}
 
               {/* Submit Button */}
               <div className="flex items-center gap-3 pt-2">
