@@ -55,10 +55,8 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'Reviews', path: '/reviews', icon: Star, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'FAQs', path: '/faqs', icon: HelpCircle, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Newsletter', path: '/subscribers', icon: Mail, roles: ['superadmin', 'manager', 'editor'] },
-        /*
-        { name: 'Job Postings', path: '/job-postings', icon: Briefcase, roles: ['superadmin', 'manager'] },
-        { name: 'Job Applications', path: '/job-applications', icon: Briefcase, roles: ['superadmin', 'manager'] },
-        */
+        { name: 'Job Postings', path: '/job-postings', icon: Briefcase, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'Job Applications', path: '/job-applications', icon: Briefcase, roles: ['superadmin', 'manager', 'editor'] },
       ]
     },
     {
