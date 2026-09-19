@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell, Send, Users, Tag, Upload, Image, Trash2, RefreshCw,
+  Bell, Send, Users, Tag, User, Upload, Image, Trash2, RefreshCw,
   CheckCircle2, XCircle, AlertCircle, ChevronDown, Eye, X,
   Megaphone, BarChart2, Clock, Smartphone, Link2
 } from 'lucide-react';
 import api from '../services/api';
-import {
-  sendNotification,
-  getNotifications,
-  deleteNotification
-} from '../services/notificationService';
+import { getNotifications, sendNotification, deleteNotification, getCustomers } from '../services/notificationService';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 // ─── Constants ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +26,13 @@ const TARGET_OPTIONS = [
     description: 'Send to a specific user segment (e.g. Android, iOS)',
     disabled: true,
     comingSoon: true
+  },
+  {
+    value: 'individual',
+    label: 'Individual User',
+    icon: User,
+    description: 'Pick one specific customer to test with',
+    disabled: false
   }
 ];
 
@@ -91,7 +95,7 @@ const PhonePreview = ({ title, subtitle, body, imageUrl }) => {
               {imageUrl && (
                 <div className="mt-2 rounded-lg overflow-hidden h-20">
                   <img
-                    src={imageUrl}
+                    src={resolveImageUrl(imageUrl)}
                     alt="preview"
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.style.display = 'none'; }}
@@ -132,7 +136,7 @@ const HistoryRow = ({ notification, onDelete }) => {
         <div className="flex items-start gap-3">
           {notification.imageUrl ? (
             <img
-              src={notification.imageUrl}
+              src={resolveImageUrl(notification.imageUrl)}
               alt=""
               className="w-10 h-10 rounded-lg object-cover shrink-0 border border-slate-200 dark:border-slate-700"
               onError={(e) => { e.target.style.display = 'none'; }}
@@ -223,12 +227,12 @@ const PushNotifications = () => {
   const [imageUploadError, setImageUploadError] = useState('');
   const imageFileRef = useRef(null);
   const [targetType, setTargetType] = useState('all');
-  const [topic, setTopic] = useState('all_users');
+  const [targetUserId, setTargetUserId] = useState('');
   const [dataPayload, setDataPayload] = useState('{}');
 
   // UI state
   const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState(null); // { success, message }
+  const [sendResult, setSendResult] = useState(null);
   const [showPreview, setShowPreview] = useState(true);
 
   // History
@@ -236,6 +240,13 @@ const PushNotifications = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
+
+  // Customers (for individual targeting)
+  const [customers, setCustomers] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const customerRef = useRef(null);
 
   // Stats
   const totalSent = history.filter(n => n.status === 'sent').length;
@@ -256,9 +267,35 @@ const PushNotifications = () => {
     }
   }, []);
 
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const result = await getCustomers();
+      // getCustomers now returns the array directly after normalisation
+      setCustomers(Array.isArray(result) ? result : []);
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setCustomers([]); // Never crash — just show empty list
+    }
+  }, []);
+
   useEffect(() => {
     fetchHistory(historyPage);
   }, [fetchHistory, historyPage]);
+
+  useEffect(() => {
+    if (targetType === 'individual') fetchCustomers();
+  }, [targetType, fetchCustomers]);
+
+  // Close customer dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (customerRef.current && !customerRef.current.contains(e.target)) {
+        setCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Image upload handler
   const handleImageFileUpload = async (file) => {
@@ -315,6 +352,7 @@ const PushNotifications = () => {
       imageUrl: imageUrl.trim() || null,
       targetType,
       topic: targetType === 'all' ? 'all_users' : null,
+      targetUserId: targetType === 'individual' ? targetUserId : null,
       data: parsedData
     };
 
@@ -329,6 +367,8 @@ const PushNotifications = () => {
         setImageUrl('');
         setImageUploadError('');
         setDataPayload('{}');
+        setSelectedCustomer(null);
+        setTargetUserId('');
         // Refresh history
         await fetchHistory(1);
         setHistoryPage(1);
@@ -354,7 +394,15 @@ const PushNotifications = () => {
     }
   };
 
-  // (no customer filtering needed — individual targeting removed)
+  // Filtered customers for search
+  const filteredCustomers = customers.filter(c => {
+    const q = customerSearch.toLowerCase();
+    return (
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) ||
+      (c.email || '').toLowerCase().includes(q)
+    );
+  });
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -500,7 +548,89 @@ const PushNotifications = () => {
                 </div>
               </div>
 
-              {/* No extra panel needed — only 'all' is active for now */}
+              {/* Individual User Selector */}
+              <AnimatePresence>
+                {targetType === 'individual' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    ref={customerRef}
+                    className="relative"
+                  >
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Select Customer <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
+                      className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+                    >
+                      <span className={selectedCustomer ? 'text-slate-800 dark:text-slate-100 font-medium' : 'text-slate-400'}>
+                        {selectedCustomer
+                          ? `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''} — ${selectedCustomer.phone || selectedCustomer.email || ''}`
+                          : 'Search and select a customer...'}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${customerDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {customerDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
+                        >
+                          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                            <input
+                              type="text"
+                              placeholder="Search by name, phone, email..."
+                              value={customerSearch}
+                              onChange={e => setCustomerSearch(e.target.value)}
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                          <div className="max-h-52 overflow-y-auto">
+                            {filteredCustomers.length === 0 ? (
+                              <p className="text-center text-sm text-slate-400 py-4">No customers found</p>
+                            ) : (
+                              filteredCustomers.slice(0, 50).map(c => (
+                                <button
+                                  key={c._id || c.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCustomer(c);
+                                    setTargetUserId(c._id || c.id);
+                                    setCustomerDropdownOpen(false);
+                                    setCustomerSearch('');
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-200 to-blue-200 dark:from-violet-900 dark:to-blue-900 flex items-center justify-center shrink-0">
+                                    <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
+                                      {(c.firstName || c.phone || '?').charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
+                                      {`${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unknown'}
+                                    </p>
+                                    <p className="text-xs text-slate-400 truncate">
+                                      {c.phone || c.email || 'No contact info'}
+                                      {!c.fcmToken && ' · ⚠ No FCM token'}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Title */}
               <div>
@@ -690,7 +820,7 @@ const PushNotifications = () => {
                       className="mt-3 relative group/img"
                     >
                       <img
-                        src={imageUrl}
+                        src={resolveImageUrl(imageUrl)}
                         alt="Preview"
                         className="w-full h-36 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
                         onError={(e) => { e.target.style.opacity = '0.3'; }}

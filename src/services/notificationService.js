@@ -34,9 +34,12 @@ export const deleteNotification = async (id) => {
 
 /**
  * Fetch customer list for individual targeting (dropdown).
+ * API returns: { success, data: { customers: [], pagination: {} } }
  */
 export const getCustomers = async () => {
-  const response = await api.get('/api/customers', { params: { limit: 300 } });
-  return response.data;
+  const response = await api.get('/api/customers', { params: { limit: 500, page: 1 } });
+  // Normalise across different response shapes
+  const d = response.data;
+  return d?.data?.customers ?? d?.customers ?? d?.data ?? [];
 };
 
