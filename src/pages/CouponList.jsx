@@ -24,6 +24,7 @@ const CouponList = () => {
   const [startDate, setStartDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [status, setStatus] = useState(true);
+  const [freeShipping, setFreeShipping] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { showNotification } = useNotification();
@@ -60,6 +61,7 @@ const CouponList = () => {
       setStartDate(coupon.startDate ? coupon.startDate.substring(0, 10) : '');
       setExpiryDate(coupon.expiryDate ? coupon.expiryDate.substring(0, 10) : '');
       setStatus(coupon.status);
+      setFreeShipping(coupon.freeShipping || false);
     } else {
       setEditingCoupon(null);
       setCode('');
@@ -76,6 +78,7 @@ const CouponList = () => {
       setStartDate(today);
       setExpiryDate(nextMonth.toISOString().substring(0, 10));
       setStatus(true);
+      setFreeShipping(false);
     }
     setModalOpen(true);
   };
@@ -97,7 +100,8 @@ const CouponList = () => {
         usageLimit,
         startDate,
         expiryDate,
-        status
+        status,
+        freeShipping
       };
 
       let res;
@@ -187,6 +191,19 @@ const CouponList = () => {
         }`}>
           {row.status ? 'Active' : 'Expired'}
         </span>
+      )
+    },
+    {
+      header: 'Free Shipping',
+      accessor: 'freeShipping',
+      cell: (row) => (
+        row.freeShipping ? (
+          <span className="px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wider bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-450">
+            Yes
+          </span>
+        ) : (
+          <span className="text-slate-400">-</span>
+        )
       )
     },
     {
@@ -333,17 +350,32 @@ const CouponList = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 py-1.5">
-            <input
-              type="checkbox"
-              id="couponStatus"
-              checked={status}
-              onChange={(e) => setStatus(e.target.checked)}
-              className="w-4 h-4 text-brand-600 border-slate-350 rounded"
-            />
-            <label htmlFor="couponStatus" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-              Coupon is Active and usable
-            </label>
+          <div className="flex flex-col gap-3 py-1.5">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="couponStatus"
+                checked={status}
+                onChange={(e) => setStatus(e.target.checked)}
+                className="w-4 h-4 text-brand-600 border-slate-350 rounded"
+              />
+              <label htmlFor="couponStatus" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Coupon is Active and usable
+              </label>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="freeShipping"
+                checked={freeShipping}
+                onChange={(e) => setFreeShipping(e.target.checked)}
+                className="w-4 h-4 text-brand-600 border-slate-350 rounded"
+              />
+              <label htmlFor="freeShipping" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Apply Free Shipping
+              </label>
+            </div>
           </div>
 
           <button
