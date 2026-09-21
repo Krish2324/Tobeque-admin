@@ -89,12 +89,35 @@ const ProductForm = () => {
   const [seoKeywords, setSeoKeywords] = useState('');
   const [imageAltTag, setImageAltTag] = useState('');
   const [seoSchema, setSeoSchema] = useState('');
+  const [twitterMeta, setTwitterMeta] = useState('');
+  const [ogMeta, setOgMeta] = useState('');
   const [twitterTitle, setTwitterTitle] = useState('');
   const [twitterDescription, setTwitterDescription] = useState('');
   const [twitterImage, setTwitterImage] = useState('');
   const [ogTitle, setOgTitle] = useState('');
   const [ogDescription, setOgDescription] = useState('');
   const [ogImage, setOgImage] = useState('');
+
+  const parseMetaFields = (htmlString) => {
+    const res = { title: '', description: '', image: '', cardOrType: '' };
+    if (!htmlString) return res;
+    const metaRegex = /<meta\s+([^>]+)>/gi;
+    let match;
+    while ((match = metaRegex.exec(htmlString)) !== null) {
+      const attrs = match[1];
+      const nameMatch = attrs.match(/(?:name|property)\s*=\s*["']([^"']+)["']/i);
+      const contentMatch = attrs.match(/content\s*=\s*["']([^"']+)["']/i);
+      if (nameMatch && contentMatch) {
+        const key = nameMatch[1].toLowerCase().trim();
+        const val = contentMatch[1];
+        if (key.includes('title')) res.title = val;
+        else if (key.includes('description')) res.description = val;
+        else if (key.includes('image')) res.image = val;
+        else if (key.includes('card') || key.includes('type')) res.cardOrType = val;
+      }
+    }
+    return res;
+  };
 
   // Settings Tab Navigation State
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
@@ -434,6 +457,32 @@ const ProductForm = () => {
         setOgTitle(prod.ogTitle || '');
         setOgDescription(prod.ogDescription || '');
         setOgImage(prod.ogImage || '');
+
+        if (prod.twitterMeta) {
+          setTwitterMeta(prod.twitterMeta);
+        } else if (prod.twitterTitle || prod.twitterDescription || prod.twitterImage) {
+          const twitterLines = [];
+          if (prod.twitterCard) twitterLines.push(`<meta name="twitter:card" content="${prod.twitterCard}" />`);
+          if (prod.twitterTitle) twitterLines.push(`<meta name="twitter:title" content="${prod.twitterTitle}" />`);
+          if (prod.twitterDescription) twitterLines.push(`<meta name="twitter:description" content="${prod.twitterDescription}" />`);
+          if (prod.twitterImage) twitterLines.push(`<meta name="twitter:image" content="${prod.twitterImage}" />`);
+          setTwitterMeta(twitterLines.join('\n'));
+        } else {
+          setTwitterMeta('');
+        }
+
+        if (prod.ogMeta) {
+          setOgMeta(prod.ogMeta);
+        } else if (prod.ogTitle || prod.ogDescription || prod.ogImage) {
+          const ogLines = [];
+          if (prod.ogTitle) ogLines.push(`<meta property="og:title" content="${prod.ogTitle}" />`);
+          if (prod.ogDescription) ogLines.push(`<meta property="og:description" content="${prod.ogDescription}" />`);
+          if (prod.ogImage) ogLines.push(`<meta property="og:image" content="${prod.ogImage}" />`);
+          if (prod.ogType) ogLines.push(`<meta property="og:type" content="${prod.ogType}" />`);
+          setOgMeta(ogLines.join('\n'));
+        } else {
+          setOgMeta('');
+        }
         setStyleItWith(prod.styleItWith ? prod.styleItWith.map(p => typeof p === 'object' ? { id: p.id || p._id, name: p.name, sku: p.sku, thumbnail: p.thumbnail } : { id: p }) : []);
         setRelatedCategories(prod.relatedCategories ? prod.relatedCategories.map(c => typeof c === 'object' ? (c.id || c._id) : c) : []);
         setFabricCare(prod.fabricCare || '');
@@ -703,12 +752,20 @@ const ProductForm = () => {
       formData.append('seoKeywords', seoKeywords);
       formData.append('imageAltTag', imageAltTag);
       formData.append('seoSchema', seoSchema);
-      formData.append('twitterTitle', twitterTitle);
-      formData.append('twitterDescription', twitterDescription);
-      formData.append('twitterImage', twitterImage);
-      formData.append('ogTitle', ogTitle);
-      formData.append('ogDescription', ogDescription);
-      formData.append('ogImage', ogImage);
+      
+      formData.append('twitterMeta', twitterMeta);
+      const parsedTwitter = parseMetaFields(twitterMeta);
+      if (parsedTwitter.title) formData.append('twitterTitle', parsedTwitter.title);
+      if (parsedTwitter.description) formData.append('twitterDescription', parsedTwitter.description);
+      if (parsedTwitter.image) formData.append('twitterImage', parsedTwitter.image);
+      if (parsedTwitter.cardOrType) formData.append('twitterCard', parsedTwitter.cardOrType);
+
+      formData.append('ogMeta', ogMeta);
+      const parsedOg = parseMetaFields(ogMeta);
+      if (parsedOg.title) formData.append('ogTitle', parsedOg.title);
+      if (parsedOg.description) formData.append('ogDescription', parsedOg.description);
+      if (parsedOg.image) formData.append('ogImage', parsedOg.image);
+      if (parsedOg.cardOrType) formData.append('ogType', parsedOg.cardOrType);
       formData.append('countdownEvergreen', countdownEvergreen);
       formData.append('restartCountdownAfter', restartCountdownAfter);
       formData.append('countdownTimerProfile', countdownTimerProfile);
@@ -2564,71 +2621,29 @@ const ProductForm = () => {
             </div>
 
             {/* Twitter Card Meta Tags */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block uppercase tracking-wider">Twitter Card Metadata</span>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">TWITTER CARD METADATA</span>
               <div>
-                <label className="form-label text-xs">Twitter Title</label>
-                <input
-                  type="text"
-                  placeholder="Custom title for Twitter sharing card"
-                  value={twitterTitle}
-                  onChange={(e) => setTwitterTitle(e.target.value)}
-                  className="form-input text-xs"
-                />
-              </div>
-              <div>
-                <label className="form-label text-xs">Twitter Description</label>
                 <textarea
-                  rows={2}
-                  placeholder="Custom summary description for Twitter"
-                  value={twitterDescription}
-                  onChange={(e) => setTwitterDescription(e.target.value)}
-                  className="form-input text-xs resize-none"
-                />
-              </div>
-              <div>
-                <label className="form-label text-xs">Twitter Image URL</label>
-                <input
-                  type="text"
-                  placeholder="Custom image URL for Twitter card (e.g. https://...)"
-                  value={twitterImage}
-                  onChange={(e) => setTwitterImage(e.target.value)}
-                  className="form-input text-xs"
+                  rows={4}
+                  placeholder={`<meta name="twitter:card" content="summary_large_image" />\n<meta name="twitter:title" content="Twitter sharing title" />\n<meta name="twitter:description" content="Twitter summary description" />\n<meta name="twitter:image" content="https://..." />`}
+                  value={twitterMeta}
+                  onChange={(e) => setTwitterMeta(e.target.value)}
+                  className="form-input text-xs font-mono resize-y"
                 />
               </div>
             </div>
 
-            {/* Open Graph (OG) Meta Tags */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block uppercase tracking-wider">Open Graph (Facebook / WhatsApp / LinkedIn) Metadata</span>
+            {/* Open Graph Meta Tags */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">OPEN GRAPH (OG) METADATA</span>
               <div>
-                <label className="form-label text-xs">Open Graph (OG) Title</label>
-                <input
-                  type="text"
-                  placeholder="og:title headline for social sharing"
-                  value={ogTitle}
-                  onChange={(e) => setOgTitle(e.target.value)}
-                  className="form-input text-xs"
-                />
-              </div>
-              <div>
-                <label className="form-label text-xs">Open Graph (OG) Description</label>
                 <textarea
-                  rows={2}
-                  placeholder="og:description text snippet"
-                  value={ogDescription}
-                  onChange={(e) => setOgDescription(e.target.value)}
-                  className="form-input text-xs resize-none"
-                />
-              </div>
-              <div>
-                <label className="form-label text-xs">Open Graph (OG) Image URL</label>
-                <input
-                  type="text"
-                  placeholder="og:image URL for social preview thumbnail"
-                  value={ogImage}
-                  onChange={(e) => setOgImage(e.target.value)}
-                  className="form-input text-xs"
+                  rows={4}
+                  placeholder={`<meta property="og:title" content="og:title headline" />\n<meta property="og:description" content="og:description text" />\n<meta property="og:image" content="https://..." />\n<meta property="og:type" content="product" />`}
+                  value={ogMeta}
+                  onChange={(e) => setOgMeta(e.target.value)}
+                  className="form-input text-xs font-mono resize-y"
                 />
               </div>
             </div>
