@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, FolderTree, ShoppingCart, Users,
   Ticket, ClipboardList, Image, Star, FileBarChart, Settings,
-  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen, FileText, Camera, PenTool, List, Bell
+  Activity, LogOut, ChevronLeft, ChevronRight, Menu, X, Layers, MessageSquare, Briefcase, HelpCircle, Mail, BookOpen, FileText, Camera, PenTool, List, Bell, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,6 +53,7 @@ const Sidebar = ({ isOpen, toggleSidebar, mobileOpen, toggleMobileSidebar }) => 
         { name: 'Customers', path: '/customers', icon: Users, roles: ['superadmin', 'manager'] },
         { name: 'Inquiries', path: '/inquiries', icon: MessageSquare, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Refund Requests', path: '/refund-requests', icon: ClipboardList, roles: ['superadmin', 'manager', 'editor'] },
+        { name: 'Account Deletions', path: '/account-deletions', icon: Trash2, roles: ['superadmin', 'manager'] },
         { name: 'Reviews', path: '/reviews', icon: Star, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'FAQs', path: '/faqs', icon: HelpCircle, roles: ['superadmin', 'manager', 'editor'] },
         { name: 'Newsletter', path: '/subscribers', icon: Mail, roles: ['superadmin', 'manager', 'editor'] },

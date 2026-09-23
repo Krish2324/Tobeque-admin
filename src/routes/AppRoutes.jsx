@@ -31,6 +31,7 @@ import CommunityStyleForm from '../pages/CommunityStyleForm';
 import AboutUsSettings from '../pages/AboutUsSettings';
 import ContactUsAdmin from '../pages/ContactUsAdmin';
 import PushNotifications from '../pages/PushNotifications';
+import AccountDeletionRequestList from '../pages/AccountDeletionRequestList';
 
 const AppRoutes = () => {
   return (
@@ -80,6 +81,9 @@ const AppRoutes = () => {
 
         {/* Refund Requests */}
         <Route path="refund-requests" element={<RefundRequestList />} />
+
+        {/* Account Deletion Requests (Google Play compliance) */}
+        <Route path="account-deletions" element={<AccountDeletionRequestList />} />
 
         {/* Newsletter Subscribers */}
         <Route path="subscribers" element={<SubscriberList />} />
