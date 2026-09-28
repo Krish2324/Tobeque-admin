@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { resolveImageUrl } from '../utils/imageUrl';
+import RichTextEditor from '../components/RichTextEditor';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -564,12 +565,10 @@ const Settings = () => {
                 </div>
                 <div>
                   <label className="form-label text-xs">Global Shipping &amp; Returns Policy</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Global shipping & returns information shown across all product pages..."
+                  <RichTextEditor
                     value={shippingReturnsText}
-                    onChange={(e) => setShippingReturnsText(e.target.value)}
-                    className="form-input text-xs"
+                    onChange={setShippingReturnsText}
+                    placeholder="Global shipping & returns information shown across all product pages..."
                   />
                   <span className="text-[10px] text-slate-450 dark:text-slate-500 mt-1 block">This text will be displayed in the Shipping &amp; Returns accordion across all product pages on the website.</span>
                 </div>
