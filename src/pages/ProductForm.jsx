@@ -343,6 +343,8 @@ const ProductForm = () => {
   const [sizeChartMode, setSizeChartMode] = useState('disabled');
   const [sizeChart, setSizeChart] = useState(DEFAULT_SIZE_CHART);
   const [newColumnName, setNewColumnName] = useState('');
+  const [sizeGuideImageFile, setSizeGuideImageFile] = useState(null);
+  const [sizeGuideImagePreview, setSizeGuideImagePreview] = useState('');
 
   // Compile flattened category options list
   const getCategoryOptions = () => {
@@ -519,6 +521,10 @@ const ProductForm = () => {
               setSizeChart(parsed);
             } else {
               setSizeChartMode('standard');
+            }
+            // Restore existing sizeGuideImage preview
+            if (parsed.image) {
+              setSizeGuideImagePreview(parsed.image);
             }
           } else {
             setSizeChartMode('disabled');
@@ -815,11 +821,25 @@ const ProductForm = () => {
       if (sizeChartMode === 'disabled') {
         sizeChartPayload = JSON.stringify({ disabled: true });
       } else if (sizeChartMode === 'standard') {
-        sizeChartPayload = JSON.stringify({ isStandard: true });
+        const payloadChart = { isStandard: true };
+        if (sizeGuideImagePreview && !sizeGuideImagePreview.startsWith('blob:')) {
+          payloadChart.image = sizeGuideImagePreview;
+        }
+        sizeChartPayload = JSON.stringify(payloadChart);
       } else if (sizeChartMode === 'custom') {
-        sizeChartPayload = JSON.stringify(sizeChart);
+        const payloadChart = { ...sizeChart };
+        if (!sizeGuideImagePreview) {
+          delete payloadChart.image;
+        } else if (!sizeGuideImagePreview.startsWith('blob:')) {
+          payloadChart.image = sizeGuideImagePreview;
+        }
+        sizeChartPayload = JSON.stringify(payloadChart);
       }
       formData.append('sizeChart', sizeChartPayload);
+
+      if (sizeGuideImageFile) {
+        formData.append('sizeGuideImage', sizeGuideImageFile);
+      }
 
       if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
@@ -1662,6 +1682,60 @@ const ProductForm = () => {
                         <p className="text-[10px] text-slate-500 pl-5">Customize exact columns & rows for this product.</p>
                       </label>
                     </div>
+
+                    {/* Per-product Size Guide Image — shown for standard & custom modes */}
+                    {(sizeChartMode === 'standard' || sizeChartMode === 'custom') && (
+                      <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-850 space-y-3">
+                        <div>
+                          <div className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
+                            Size Guide Image (Optional)
+                          </div>
+                          <p className="text-[10px] text-slate-500 mb-3">
+                            Upload a product-specific size guide image (e.g. measurement diagram). If left empty, the global standard size guide image from <strong>Settings → General Branding</strong> will be used.
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-4 items-start">
+                            {sizeGuideImagePreview && (
+                              <div className="relative shrink-0">
+                                <img
+                                  src={resolveImageUrl(sizeGuideImagePreview)}
+                                  alt="Size guide preview"
+                                  className="w-28 h-28 object-contain rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => { setSizeGuideImageFile(null); setSizeGuideImagePreview(''); }}
+                                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-600 transition-colors"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            )}
+                            <label className="flex-1 flex flex-col items-center justify-center gap-1.5 h-24 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:border-brand-500 hover:bg-brand-50/20 dark:hover:border-brand-500 dark:hover:bg-brand-950/10 transition-all">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                {sizeGuideImagePreview ? 'Replace image' : 'Upload size guide image'}
+                              </span>
+                              <span className="text-[10px] text-slate-400">PNG, JPG, WEBP</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    setSizeGuideImageFile(file);
+                                    setSizeGuideImagePreview(URL.createObjectURL(file));
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {sizeChartMode === 'custom' && (
                       <div className="space-y-5 pt-2">

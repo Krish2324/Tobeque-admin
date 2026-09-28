@@ -3,6 +3,7 @@ import { Settings as SettingsIcon, Mail, CreditCard, Shield, Save, Plus, X, Truc
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -18,6 +19,9 @@ const Settings = () => {
   const [deliveryEstimateMax, setDeliveryEstimateMax] = useState('5');
   const [gstBrackets, setGstBrackets] = useState('0, 5, 12, 18, 28');
   const [newGstBracket, setNewGstBracket] = useState('');
+  const [standardSizeGuideImage, setStandardSizeGuideImage] = useState('');
+  const [standardSizeGuideImageFile, setStandardSizeGuideImageFile] = useState(null);
+  const [standardSizeGuideImagePreview, setStandardSizeGuideImagePreview] = useState('');
   
   // SMTP State
   const [smtpHost, setSmtpHost] = useState('');
@@ -82,12 +86,29 @@ const Settings = () => {
     setTestingShiprocket(true);
     try {
       // First save settings so backend has latest values
-      await api.post('/api/settings', {
-        storeName, storeEmail, storeCurrency, shippingReturnsText, deliveryEstimateMin, deliveryEstimateMax,
-        gstBrackets, smtpHost, smtpPort, smtpUser, smtpPassword: smtpPass, stripePublishableKey, stripeSecretKey,
-        shippingFallbackRate, freeShippingThreshold, codFee, shiprocketEmail, shiprocketPassword,
-        shiprocketPickupPincode, shiprocketPickupLocation
-      });
+      const testFormData = new FormData();
+      testFormData.append('storeName', storeName);
+      testFormData.append('storeEmail', storeEmail);
+      testFormData.append('storeCurrency', storeCurrency);
+      testFormData.append('shippingReturnsText', shippingReturnsText);
+      testFormData.append('deliveryEstimateMin', deliveryEstimateMin);
+      testFormData.append('deliveryEstimateMax', deliveryEstimateMax);
+      testFormData.append('gstBrackets', gstBrackets);
+      testFormData.append('smtpHost', smtpHost);
+      testFormData.append('smtpPort', smtpPort);
+      testFormData.append('smtpUser', smtpUser);
+      testFormData.append('smtpPassword', smtpPass);
+      testFormData.append('stripePublishableKey', stripePublishableKey);
+      testFormData.append('stripeSecretKey', stripeSecretKey);
+      testFormData.append('shippingFallbackRate', shippingFallbackRate);
+      testFormData.append('freeShippingThreshold', freeShippingThreshold);
+      testFormData.append('codFee', codFee);
+      testFormData.append('shiprocketEmail', shiprocketEmail);
+      testFormData.append('shiprocketPassword', shiprocketPassword);
+      testFormData.append('shiprocketPickupPincode', shiprocketPickupPincode);
+      testFormData.append('shiprocketPickupLocation', shiprocketPickupLocation);
+      await api.post('/api/settings', testFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
+
 
       const res = await api.get('/api/shipping/test-connection');
       if (res.data.success) {
@@ -130,6 +151,8 @@ const Settings = () => {
         setShiprocketPassword(settings.shiprocketPassword || '');
         setShiprocketPickupPincode(settings.shiprocketPickupPincode || '380015');
         setShiprocketPickupLocation(settings.shiprocketPickupLocation || '');
+        setStandardSizeGuideImage(settings.standardSizeGuideImage || '');
+        setStandardSizeGuideImagePreview(settings.standardSizeGuideImage || '');
       }
 
       if (admin) {
@@ -164,31 +187,38 @@ const Settings = () => {
           setNewPassword('');
         }
       } else {
-        // System settings payload
-        const payload = {
-          storeName,
-          storeEmail,
-          storeCurrency,
-          shippingReturnsText,
-          deliveryEstimateMin,
-          deliveryEstimateMax,
-          gstBrackets,
-          smtpHost,
-          smtpPort,
-          smtpUser,
-          smtpPassword: smtpPass,
-          stripePublishableKey,
-          stripeSecretKey,
-          shippingFallbackRate,
-          freeShippingThreshold,
-          codFee,
-          shiprocketEmail,
-          shiprocketPassword,
-          shiprocketPickupPincode,
-          shiprocketPickupLocation
-        };
+        // System settings payload — send as multipart/form-data to support image upload
+        const formData = new FormData();
+        formData.append('storeName', storeName);
+        formData.append('storeEmail', storeEmail);
+        formData.append('storeCurrency', storeCurrency);
+        formData.append('shippingReturnsText', shippingReturnsText);
+        formData.append('deliveryEstimateMin', deliveryEstimateMin);
+        formData.append('deliveryEstimateMax', deliveryEstimateMax);
+        formData.append('gstBrackets', gstBrackets);
+        formData.append('smtpHost', smtpHost);
+        formData.append('smtpPort', smtpPort);
+        formData.append('smtpUser', smtpUser);
+        formData.append('smtpPassword', smtpPass);
+        formData.append('stripePublishableKey', stripePublishableKey);
+        formData.append('stripeSecretKey', stripeSecretKey);
+        formData.append('shippingFallbackRate', shippingFallbackRate);
+        formData.append('freeShippingThreshold', freeShippingThreshold);
+        formData.append('codFee', codFee);
+        formData.append('shiprocketEmail', shiprocketEmail);
+        formData.append('shiprocketPassword', shiprocketPassword);
+        formData.append('shiprocketPickupPincode', shiprocketPickupPincode);
+        formData.append('shiprocketPickupLocation', shiprocketPickupLocation);
 
-        const res = await api.post('/api/settings', payload);
+        if (standardSizeGuideImageFile) {
+          formData.append('standardSizeGuideImage', standardSizeGuideImageFile);
+        } else {
+          formData.append('standardSizeGuideImage', standardSizeGuideImage || '');
+        }
+
+        const res = await api.post('/api/settings', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         if (res.data.success) {
           showNotification('System settings saved successfully!', 'success');
         }
@@ -607,6 +637,59 @@ const Settings = () => {
                       onChange={(e) => setDeliveryEstimateMax(e.target.value)}
                       className="form-input text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
+                  </div>
+                </div>
+
+                {/* Standard Size Guide Image */}
+                <div className="border-t border-slate-100 dark:border-slate-850 pt-5">
+                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-2">
+                    <span>📐</span> Standard Size Guide Image
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-3">
+                    This image will be displayed in the Size Guide modal for products that use the <strong>Standard Size Guide</strong> option. It can be overridden per-product in the Product Form → Size Chart tab.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    {/* Preview */}
+                    {standardSizeGuideImagePreview && (
+                      <div className="relative shrink-0">
+                        <img
+                          src={resolveImageUrl(standardSizeGuideImagePreview)}
+                          alt="Size guide preview"
+                          className="w-32 h-32 object-contain rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setStandardSizeGuideImage(''); setStandardSizeGuideImageFile(null); setStandardSizeGuideImagePreview(''); }}
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-600 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <label className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:border-brand-500 hover:bg-brand-50/20 dark:hover:border-brand-500 dark:hover:bg-brand-950/10 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {standardSizeGuideImagePreview ? 'Replace image' : 'Upload size guide image'}
+                        </span>
+                        <span className="text-[10px] text-slate-400">PNG, JPG, WEBP up to 10MB</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setStandardSizeGuideImageFile(file);
+                              setStandardSizeGuideImagePreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
