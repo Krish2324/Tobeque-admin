@@ -1,8 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { AdminNotificationProvider } from './context/AdminNotificationContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import AppRoutes from './routes/AppRoutes';
 
@@ -12,9 +13,11 @@ function App() {
       <NotificationProvider>
         <ThemeProvider>
           <AuthProvider>
-            <CurrencyProvider>
-              <AppRoutes />
-            </CurrencyProvider>
+            <AdminNotificationProvider>
+              <CurrencyProvider>
+                <AppRoutes />
+              </CurrencyProvider>
+            </AdminNotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </NotificationProvider>
